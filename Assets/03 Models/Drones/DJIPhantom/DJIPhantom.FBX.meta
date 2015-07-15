@@ -39,6 +39,10 @@ ModelImporter:
     100062: Rotor4
     100064: CameraPitchSystem
     100066: CameraRollSystem
+    100068: CameraModel 1
+    100070: DJIPhantom
+    100072: Rectangle001
+    100074: Rectangle002
     400000: BodyLegs
     400002: BodyLower
     400004: BodyUpper
@@ -73,6 +77,10 @@ ModelImporter:
     400062: Rotor4
     400064: CameraPitchSystem
     400066: CameraRollSystem
+    400068: CameraModel 1
+    400070: DJIPhantom
+    400072: Rectangle001
+    400074: Rectangle002
     2300000: BodyLegs
     2300002: BodyLower
     2300004: BodyUpper
@@ -100,6 +108,7 @@ ModelImporter:
     2300048: RotorBlades3
     2300050: RotorBlades4
     2300052: CameraModel
+    2300054: CameraModel 1
     3300000: BodyLegs
     3300002: BodyLower
     3300004: BodyUpper
@@ -127,6 +136,7 @@ ModelImporter:
     3300048: RotorBlades3
     3300050: RotorBlades4
     3300052: CameraModel
+    3300054: CameraModel 1
     4300000: LightsFront
     4300002: BodyLower
     4300004: LightsBack
