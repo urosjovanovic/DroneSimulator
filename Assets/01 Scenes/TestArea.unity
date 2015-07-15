@@ -321,7 +321,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 400024, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: .0291000009
+      value: .0394000001
       objectReference: {fileID: 0}
     - target: {fileID: 400024, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
       propertyPath: m_LocalPosition.z
@@ -391,10 +391,6 @@ Prefab:
     - {fileID: 9500000, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
   m_ParentPrefab: {fileID: 100100000, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
   m_IsPrefabParent: 0
---- !u!4 &998782492 stripped
-Transform:
-  m_PrefabParentObject: {fileID: 400024, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
-  m_PrefabInternal: {fileID: 998782491}
 --- !u!4 &998782493 stripped
 Transform:
   m_PrefabParentObject: {fileID: 400062, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
@@ -434,7 +430,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02c13dbd382d8784cbed4cc1c8e39201, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DroneModel: {fileID: 998782492}
   FrontLeftRotor: {fileID: 998782493}
   FrontRightRotor: {fileID: 998782496}
   BackLeftRotor: {fileID: 998782494}
@@ -442,6 +437,33 @@ MonoBehaviour:
   DroneCamera: {fileID: 0}
   CameraRollSystem: {fileID: 998782497}
   CameraPitchSystem: {fileID: 998782498}
+--- !u!54 &998782501
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 998782499}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: .0500000007
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!65 &998782502
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 998782499}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: .349999994, y: .165000007, z: .349999994}
+  m_Center: {x: 0, y: .0500000007, z: -.0500000007}
 --- !u!1 &1490009133
 GameObject:
   m_ObjectHideFlags: 0

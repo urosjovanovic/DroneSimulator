@@ -2,13 +2,11 @@
 using System;
 using System.Collections;
 
-public class DroneController : MonoBehaviour 
+public sealed class DroneController : MonoBehaviour 
 {
-    private Transform[] rotors;
+    private Rotor[] rotors;
     private Vector3 cameraViewDirection;
-
-    //Represents the whole model (root object)
-    public Transform DroneModel;
+    private Transform droneModel;
 
     //Looking from the top of the drone
     public Transform FrontLeftRotor;
@@ -26,36 +24,37 @@ public class DroneController : MonoBehaviour
     {
         try
         {
-            if (this.DroneModel == null)
-                throw new ArgumentNullException("No drone model attached");
-
             if (this.FrontLeftRotor == null || this.FrontRightRotor == null || this.BackLeftRotor == null || this.BackRightRotor == null)
                 throw new ArgumentNullException("One or more rotor objects are missing");
+            this.droneModel = this.gameObject.transform;
+            this.rotors = new Rotor[4] { new Rotor(this.FrontLeftRotor), new Rotor(this.FrontRightRotor), new Rotor(this.BackLeftRotor), new Rotor(this.BackRightRotor) };
+            if (this.HasCamera)
+                this.cameraViewDirection = this.DroneCamera.transform.forward;
+            else
+                this.cameraViewDirection = this.CameraPitchSystem.forward;
         }
-        catch
+        catch(Exception ex)
         {
+            Debug.LogError("DroneController Initialization failed: " + ex.Message);
             this.enabled = false;
-            throw;
         }
-
-        this.rotors = new Transform[4]{ this.FrontLeftRotor, this.FrontRightRotor, this.BackLeftRotor, this.BackRightRotor };
-        if (this.HasCamera)
-            this.cameraViewDirection = this.DroneCamera.transform.forward;
-        else
-            this.cameraViewDirection = this.CameraPitchSystem.forward;
 	}
 	
 	// Update is called once per frame
 	void Update () 
     {
         foreach (var rotor in this.rotors)
-            rotor.RotateAround(rotor.GetObjectCenter(), this.DroneModel.up, 3600*Time.deltaTime);
+            rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600*Time.deltaTime);
 
         //Simulating camera gyro
-        if (this.CameraRollSupported)
-            this.CameraRollSystem.up = Vector3.up;
-        if (this.CameraPitchSupported)
-            this.CameraPitchSystem.forward = this.cameraViewDirection;
+        //if (this.CameraRollSupported)
+        //    this.CameraRollSystem.up = Vector3.up;
+        //if (this.CameraPitchSupported)
+        //    this.CameraPitchSystem.forward = this.cameraViewDirection;
+
+        var rigidBody = this.droneModel.GetComponent<Rigidbody>();
+        foreach(var rotor in this.rotors)
+            rigidBody.AddForceAtPosition(Vector3.up*rotor.Force, rotor.Transform.position);
 	}
 
     private bool HasCamera
@@ -71,5 +70,28 @@ public class DroneController : MonoBehaviour
     private bool CameraPitchSupported
     {
         get { return this.CameraPitchSystem != null; }
+    }
+}
+
+public sealed class Rotor
+{
+    private readonly Transform transform;
+    private float force;
+
+    public Rotor(Transform transform)
+    {
+        this.transform = transform;
+        this.force = 2.05f;
+    }
+
+    public float Force
+    {
+        get { return force; }
+        set { force = value; }
+    }
+
+    public Transform Transform
+    {
+        get { return transform; }
     }
 }
