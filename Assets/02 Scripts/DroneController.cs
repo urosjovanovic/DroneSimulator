@@ -7,6 +7,10 @@ public sealed class DroneController : MonoBehaviour
     private Rotor[] rotors;
     private Vector3 cameraViewDirection;
     private Transform droneModel;
+    private Rigidbody droneRigidbody;
+    private float verticalSpeed;
+
+    #region Inspector Accessible Params
 
     //Looking from the top of the drone
     public Transform FrontLeftRotor;
@@ -19,6 +23,30 @@ public sealed class DroneController : MonoBehaviour
     public Transform CameraRollSystem;
     public Transform CameraPitchSystem;
 
+    [Range(3,6)]
+    public float MaxVerticalSpeed;
+
+    #endregion
+
+    #region Properties
+
+    private bool HasCamera
+    {
+        get { return this.DroneCamera != null; }
+    }
+
+    private bool CameraRollSupported
+    {
+        get { return this.CameraRollSystem != null; }
+    }
+
+    private bool CameraPitchSupported
+    {
+        get { return this.CameraPitchSystem != null; }
+    } 
+
+    #endregion
+
 	// Use this for initialization
 	void Start () 
     {
@@ -26,7 +54,13 @@ public sealed class DroneController : MonoBehaviour
         {
             if (this.FrontLeftRotor == null || this.FrontRightRotor == null || this.BackLeftRotor == null || this.BackRightRotor == null)
                 throw new ArgumentNullException("One or more rotor objects are missing");
+
             this.droneModel = this.gameObject.transform;
+            this.droneRigidbody = this.droneModel.GetComponent<Rigidbody>();
+
+            if (this.droneRigidbody == null)
+                throw new ArgumentNullException("No rigidbody found.");
+
             this.rotors = new Rotor[4] { new Rotor(this.FrontLeftRotor), new Rotor(this.FrontRightRotor), new Rotor(this.BackLeftRotor), new Rotor(this.BackRightRotor) };
             if (this.HasCamera)
                 this.cameraViewDirection = this.DroneCamera.transform.forward;
@@ -46,30 +80,26 @@ public sealed class DroneController : MonoBehaviour
         foreach (var rotor in this.rotors)
             rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600*Time.deltaTime);
 
-        //Simulating camera gyro
+        //TODO: Simulating camera gyro
         //if (this.CameraRollSupported)
         //    this.CameraRollSystem.up = Vector3.up;
         //if (this.CameraPitchSupported)
         //    this.CameraPitchSystem.forward = this.cameraViewDirection;
-
-        var rigidBody = this.droneModel.GetComponent<Rigidbody>();
-        foreach(var rotor in this.rotors)
-            rigidBody.AddForceAtPosition(Vector3.up*rotor.Force, rotor.Transform.position);
 	}
 
-    private bool HasCamera
+    // Run all physics based stuff here
+    void FixedUpdate ()
     {
-        get { return this.DroneCamera != null; }
-    }
-
-    private bool CameraRollSupported
-    {
-        get { return this.CameraRollSystem != null; }
-    }
-
-    private bool CameraPitchSupported
-    {
-        get { return this.CameraPitchSystem != null; }
+        float verticalAxis = Input.GetAxis("Vertical");
+        float force = 2.4525f + (verticalAxis);
+        foreach (var rotor in this.rotors)
+        {
+            rotor.Force = Math.Abs(force);
+            this.droneRigidbody.AddForceAtPosition(Math.Sign(force)*Vector3.up * rotor.Force, rotor.Transform.position, ForceMode.Force);
+        }
+        if (this.droneRigidbody.velocity.magnitude > this.MaxVerticalSpeed)
+            this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxVerticalSpeed;
+        Debug.Log(this.droneRigidbody.velocity);
     }
 }
 
@@ -81,7 +111,7 @@ public sealed class Rotor
     public Rotor(Transform transform)
     {
         this.transform = transform;
-        this.force = 2.05f;
+        this.force = 0;
     }
 
     public float Force
