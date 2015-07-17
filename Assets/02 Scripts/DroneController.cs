@@ -23,8 +23,11 @@ public sealed class DroneController : MonoBehaviour
     public Transform CameraRollSystem;
     public Transform CameraPitchSystem;
 
-    [Range(3,6)]
-    public float MaxVerticalSpeed;
+    public float VerticalStabilizationFactor = 0.35f;
+    [Range(0, 2)]
+    public float VerticalAccelerationFactor = 1.2f;
+    [Range(1, 10)]
+    public float MaxVerticalSpeed = 6;
 
     #endregion
 
@@ -90,17 +93,62 @@ public sealed class DroneController : MonoBehaviour
     // Run all physics based stuff here
     void FixedUpdate ()
     {
-        float verticalAxis = Input.GetAxis("Vertical");
-        float force = 2.4525f + (verticalAxis);
         foreach (var rotor in this.rotors)
+            rotor.Force = 2.4525f;
+
+        float verticalAxis = Input.GetAxis("Vertical");
+        float tiltAxis = Input.GetAxis("RightAnalogVertical");
+        float sidewayTiltAxis = Input.GetAxis("RightAnalogHorizontal");
+
+        if (verticalAxis == 0 && tiltAxis == 0 && sidewayTiltAxis == 0)
         {
-            rotor.Force = Math.Abs(force);
-            this.droneRigidbody.AddForceAtPosition(Math.Sign(force)*Vector3.up * rotor.Force, rotor.Transform.position, ForceMode.Force);
+            if (this.droneRigidbody.velocity.magnitude> 0)
+                this.droneRigidbody.drag += this.VerticalStabilizationFactor;
         }
+        else
+            this.droneRigidbody.drag = 0;
+
+        this.Elevate(verticalAxis * this.VerticalAccelerationFactor);
+        this.Tilt(tiltAxis);
+        this.SidewayTilt(sidewayTiltAxis);
+
+        foreach (var rotor in this.rotors)
+            this.droneRigidbody.AddForceAtPosition(Vector3.up * rotor.Force, rotor.Transform.position, ForceMode.Force);
+
         if (this.droneRigidbody.velocity.magnitude > this.MaxVerticalSpeed)
             this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxVerticalSpeed;
+
         Debug.Log(this.droneRigidbody.velocity);
     }
+
+    private void Elevate(float amount)
+    {
+        foreach (var rotor in this.rotors)
+            rotor.Force += amount;
+    }
+
+    private void Tilt(float amount)
+    {
+        float force = amount * 1.0f;
+        this.rotors[0].Force -= force;
+        this.rotors[1].Force -= force;
+        this.rotors[2].Force += force;
+        this.rotors[3].Force += force;
+
+        this.droneRigidbody.AddForce(Vector3.Cross(this.droneModel.right, Vector3.up).normalized * amount);
+    }
+
+    private void SidewayTilt(float amount)
+    {
+        float force = amount*1.0f;
+        this.rotors[1].Force -= force;
+        this.rotors[3].Force -= force;
+        this.rotors[0].Force += force;
+        this.rotors[2].Force += force;
+
+        this.droneRigidbody.AddForce(Vector3.Cross(Vector3.up, this.droneModel.forward).normalized * amount);
+    }
+
 }
 
 public sealed class Rotor
