@@ -8,6 +8,8 @@ public sealed class DroneController : MonoBehaviour
     private Transform droneModel;
     private Rigidbody droneRigidbody;
     private float verticalSpeed;
+    private Vector3 droneCameraViewDirection;
+    private float droneModelAngle;
 
     #region Inspector Accessible Params
 
@@ -73,6 +75,12 @@ public sealed class DroneController : MonoBehaviour
                 throw new ArgumentNullException("No rigidbody found.");
 
             this.rotors = new Rotor[4] { new Rotor(this.FrontLeftRotor), new Rotor(this.FrontRightRotor), new Rotor(this.BackLeftRotor), new Rotor(this.BackRightRotor) };
+
+            if (this.HasCamera)
+            {
+                this.droneCameraViewDirection = this.DroneCamera.transform.forward;
+                this.droneModelAngle = this.droneModel.eulerAngles.y;
+            }
         }
         catch(Exception ex)
         {
@@ -87,7 +95,13 @@ public sealed class DroneController : MonoBehaviour
         foreach (var rotor in this.rotors)
             rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600*Time.deltaTime);
 
-        //TODO: Simulate camera gyro
+        float cameraAxis = Input.GetAxis("CameraAxis");
+        float cameraAngle = Vector3.Angle(Vector3.up, this.droneCameraViewDirection);
+        this.droneCameraViewDirection = Quaternion.Euler(0, this.droneModel.eulerAngles.y - this.droneModelAngle, 0) * this.droneCameraViewDirection;
+        if(cameraAngle >= 90 && cameraAxis >= 0 || cameraAngle < 179 && cameraAxis <= 0)
+            this.droneCameraViewDirection = Quaternion.AngleAxis(cameraAxis, -this.DroneCamera.transform.right) * this.droneCameraViewDirection;
+        this.DroneCamera.transform.forward = this.droneCameraViewDirection;
+        this.droneModelAngle = this.droneModel.eulerAngles.y;
 	}
 
     // Run all physics based stuff here
