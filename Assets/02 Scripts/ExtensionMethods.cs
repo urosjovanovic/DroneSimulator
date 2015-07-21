@@ -20,4 +20,9 @@ public static class ExtensionMethods
         else
             return transform.transform.position;
     }
+
+    public static Vector3 GetLocalVelocity(this Rigidbody rigidbody)
+    {
+        return rigidbody.transform.InverseTransformDirection(rigidbody.velocity);
+    }
 }

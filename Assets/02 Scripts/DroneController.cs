@@ -5,7 +5,6 @@ using System.Collections;
 public sealed class DroneController : MonoBehaviour 
 {
     private Rotor[] rotors;
-    private Vector3 cameraViewDirection;
     private Transform droneModel;
     private Rigidbody droneRigidbody;
     private float verticalSpeed;
@@ -23,11 +22,20 @@ public sealed class DroneController : MonoBehaviour
     public Transform CameraRollSystem;
     public Transform CameraPitchSystem;
 
-    public float VerticalStabilizationFactor = 0.35f;
+    [Range(1, 10)]
+    public float MaxSpeed = 6;
+    [Range(0, 2)]
+    public float VerticalStabilizationFactor = 1.0f;
     [Range(0, 2)]
     public float VerticalAccelerationFactor = 1.2f;
-    [Range(1, 10)]
-    public float MaxVerticalSpeed = 6;
+    [Range(0, 2)]
+    public float HorizontalXStabilizationFactor = 1.0f;
+    [Range(0, 2)]
+    public float HorizontalYStabilizationFactor = 1.0f;
+    [Range(0, 2)]
+    public float HorizontalXAccFactor = 1.0f;
+    [Range(0, 2)]
+    public float HorizontalYAccFactor = 1.0f;
 
     #endregion
 
@@ -65,10 +73,6 @@ public sealed class DroneController : MonoBehaviour
                 throw new ArgumentNullException("No rigidbody found.");
 
             this.rotors = new Rotor[4] { new Rotor(this.FrontLeftRotor), new Rotor(this.FrontRightRotor), new Rotor(this.BackLeftRotor), new Rotor(this.BackRightRotor) };
-            if (this.HasCamera)
-                this.cameraViewDirection = this.DroneCamera.transform.forward;
-            else
-                this.cameraViewDirection = this.CameraPitchSystem.forward;
         }
         catch(Exception ex)
         {
@@ -83,30 +87,19 @@ public sealed class DroneController : MonoBehaviour
         foreach (var rotor in this.rotors)
             rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600*Time.deltaTime);
 
-        //TODO: Simulating camera gyro
-        //if (this.CameraRollSupported)
-        //    this.CameraRollSystem.up = Vector3.up;
-        //if (this.CameraPitchSupported)
-        //    this.CameraPitchSystem.forward = this.cameraViewDirection;
+        //TODO: Simulate camera gyro
 	}
 
     // Run all physics based stuff here
     void FixedUpdate ()
     {
+        float verticalAxis = Input.GetAxis("Vertical");
+        float horizontalAxis = Input.GetAxis("Horizontal");
+        float tiltAxis = Input.GetAxis("Vertical2");
+        float sidewayTiltAxis = Input.GetAxis("Horizontal2");
+
         foreach (var rotor in this.rotors)
             rotor.Force = 2.4525f;
-
-        float verticalAxis = Input.GetAxis("Vertical");
-        float tiltAxis = Input.GetAxis("RightAnalogVertical");
-        float sidewayTiltAxis = Input.GetAxis("RightAnalogHorizontal");
-
-        if (verticalAxis == 0 && tiltAxis == 0 && sidewayTiltAxis == 0)
-        {
-            if (this.droneRigidbody.velocity.magnitude> 0)
-                this.droneRigidbody.drag += this.VerticalStabilizationFactor;
-        }
-        else
-            this.droneRigidbody.drag = 0;
 
         this.Elevate(verticalAxis * this.VerticalAccelerationFactor);
         this.Tilt(tiltAxis);
@@ -115,38 +108,52 @@ public sealed class DroneController : MonoBehaviour
         foreach (var rotor in this.rotors)
             this.droneRigidbody.AddForceAtPosition(Vector3.up * rotor.Force, rotor.Transform.position, ForceMode.Force);
 
-        if (this.droneRigidbody.velocity.magnitude > this.MaxVerticalSpeed)
-            this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxVerticalSpeed;
+        Vector3 relativeVelocity = this.droneRigidbody.GetLocalVelocity();
 
-        Debug.Log(this.droneRigidbody.velocity);
+        if (tiltAxis >= 0 && relativeVelocity.z < 0 || tiltAxis <= 0 && relativeVelocity.z > 0)
+            tiltAxis -= relativeVelocity.z * this.HorizontalXStabilizationFactor;
+        this.droneRigidbody.AddForce(Vector3.Cross(this.droneModel.right, Vector3.up).normalized * tiltAxis * this.MaxSpeed * this.HorizontalXAccFactor);
+
+        if (sidewayTiltAxis >= 0 && relativeVelocity.x < 0 || sidewayTiltAxis <= 0 && relativeVelocity.x > 0)
+            sidewayTiltAxis -= relativeVelocity.x * this.HorizontalYStabilizationFactor;
+        this.droneRigidbody.AddForce(Vector3.Cross(Vector3.up, this.droneModel.forward).normalized * sidewayTiltAxis * this.MaxSpeed * this.HorizontalYAccFactor);
+
+        if (horizontalAxis >= 0 && this.droneRigidbody.angularVelocity.y < 0 || horizontalAxis <= 0 && this.droneRigidbody.angularVelocity.y > 0)
+            horizontalAxis -= this.droneRigidbody.angularVelocity.y;
+        this.droneRigidbody.AddTorque(Vector3.up * horizontalAxis * 0.5f);
+
+        if (this.droneRigidbody.velocity.magnitude > this.MaxSpeed)
+            this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxSpeed;
+
+        Debug.Log(string.Format("X: {1:0.0} Y: {0:0.0} Z: {2:0.0}", this.droneRigidbody.velocity.y, relativeVelocity.x, relativeVelocity.z));
     }
 
     private void Elevate(float amount)
     {
         foreach (var rotor in this.rotors)
+        {
             rotor.Force += amount;
+            if (amount >= 0 && this.droneRigidbody.velocity.y < 0 || amount <= 0 && this.droneRigidbody.velocity.y > 0)
+                rotor.Force -= this.droneRigidbody.velocity.y * this.VerticalStabilizationFactor;
+        }
     }
 
     private void Tilt(float amount)
     {
-        float force = amount * 1.0f;
+        float force = amount * rotors[0].Force / 2;
         this.rotors[0].Force -= force;
         this.rotors[1].Force -= force;
         this.rotors[2].Force += force;
         this.rotors[3].Force += force;
-
-        this.droneRigidbody.AddForce(Vector3.Cross(this.droneModel.right, Vector3.up).normalized * amount);
     }
 
     private void SidewayTilt(float amount)
     {
-        float force = amount*1.0f;
+        float force = amount * rotors[0].Force / 2;
         this.rotors[1].Force -= force;
         this.rotors[3].Force -= force;
         this.rotors[0].Force += force;
         this.rotors[2].Force += force;
-
-        this.droneRigidbody.AddForce(Vector3.Cross(Vector3.up, this.droneModel.forward).normalized * amount);
     }
 
 }
@@ -164,12 +171,12 @@ public sealed class Rotor
 
     public float Force
     {
-        get { return force; }
-        set { force = value; }
+        get { return this.force; }
+        set { this.force = Mathf.Clamp(value, 0, float.MaxValue); }
     }
 
     public Transform Transform
     {
-        get { return transform; }
+        get { return this.transform; }
     }
 }

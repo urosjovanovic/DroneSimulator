@@ -20,7 +20,7 @@ public sealed class CameraFollowController : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
     {
-        this.transform.position = this.Target.position - this.Target.forward * this.Distance + this.Target.up * this.Distance / 2;
+        this.transform.position = this.Target.position - Vector3.Cross(this.Target.right, Vector3.up) * this.Distance + Vector3.up * this.Distance / 2;
         this.transform.LookAt(this.Target.position);
 	}
 }
