@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 public sealed class CameraSwitcher : MonoBehaviour 
 {
     private int activeCameraIndex;
     public Camera[] Cameras;
+	public Transform Target;
+	public int rtsCameraIndex = 2;
 
 	// Use this for initialization
 	void Start () 
@@ -18,9 +21,38 @@ public sealed class CameraSwitcher : MonoBehaviour
     {
 	    if(Input.GetButtonDown("ChangeCamera"))
         {
-            this.Cameras[activeCameraIndex].enabled = false;
-            this.activeCameraIndex = (this.activeCameraIndex + 1) % this.Cameras.Length;
-            this.Cameras[activeCameraIndex].enabled = true;
+			this.Cameras[activeCameraIndex].enabled = false;
+			this.activeCameraIndex = (this.activeCameraIndex + 1) % this.Cameras.Length;
+
+			// Skip the rtsCamera
+			if(this.activeCameraIndex == rtsCameraIndex) {
+				this.activeCameraIndex = (this.activeCameraIndex + 1) % this.Cameras.Length;
+			}
+
+			this.Cameras[activeCameraIndex].enabled = true;
         }
+	}
+
+	public void SwitchRtsCamera() {		
+		this.Cameras [activeCameraIndex].enabled = false;
+
+		var drone = this.Target.gameObject;
+
+		DroneController dc = drone.GetComponent<DroneController>();
+
+		if (this.activeCameraIndex != this.rtsCameraIndex) {
+			this.activeCameraIndex = this.rtsCameraIndex;
+			var rtsCamera = this.Cameras [this.activeCameraIndex];
+			rtsCamera.transform.position = this.Target.transform.position + new Vector3 (2, 2, 2);
+			rtsCamera.transform.LookAt (this.Target.transform.position);
+			dc.RtsMode = true;
+			rtsCamera.GetComponent<RTSCameraController>().enabled = true;
+
+			rtsCamera.enabled = true;
+		} else {
+			this.activeCameraIndex = 0;
+			dc.RtsMode = false;
+			this.Cameras[this.activeCameraIndex].enabled = true;
+		}
 	}
 }

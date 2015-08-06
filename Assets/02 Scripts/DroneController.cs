@@ -39,6 +39,13 @@ public sealed class DroneController : MonoBehaviour
     [Range(0, 2)]
     public float HorizontalYAccFactor = 1.0f;
 
+	public bool RtsMode = false;
+
+	float verticalAxis = 0;
+	float horizontalAxis = 0;
+	float tiltAxis = 0;
+	float sidewayTiltAxis = 0;
+
     #endregion
 
     #region Properties
@@ -107,10 +114,13 @@ public sealed class DroneController : MonoBehaviour
     // Run all physics based stuff here
     void FixedUpdate ()
     {
-        float verticalAxis = Input.GetAxis("Vertical");
-        float horizontalAxis = Input.GetAxis("Horizontal");
-        float tiltAxis = Input.GetAxis("Vertical2");
-        float sidewayTiltAxis = Input.GetAxis("Horizontal2");
+		if (!RtsMode) {
+			verticalAxis = Input.GetAxis ("Vertical");
+			horizontalAxis = Input.GetAxis ("Horizontal");
+			tiltAxis = Input.GetAxis ("Vertical2");
+			sidewayTiltAxis = Input.GetAxis ("Horizontal2");
+		} else {
+		}
 
         foreach (var rotor in this.rotors)
             rotor.Force = 2.4525f;
@@ -123,6 +133,7 @@ public sealed class DroneController : MonoBehaviour
             this.droneRigidbody.AddForceAtPosition(Vector3.up * rotor.Force, rotor.Transform.position, ForceMode.Force);
 
         Vector3 relativeVelocity = this.droneRigidbody.GetLocalVelocity();
+
 
         if (tiltAxis >= 0 && relativeVelocity.z < 0 || tiltAxis <= 0 && relativeVelocity.z > 0)
             tiltAxis -= relativeVelocity.z * this.HorizontalXStabilizationFactor;
@@ -139,7 +150,7 @@ public sealed class DroneController : MonoBehaviour
         if (this.droneRigidbody.velocity.magnitude > this.MaxSpeed)
             this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxSpeed;
 
-        Debug.Log(string.Format("X: {1:0.0} Y: {0:0.0} Z: {2:0.0}", this.droneRigidbody.velocity.y, relativeVelocity.x, relativeVelocity.z));
+        //Debug.Log(string.Format("X: {1:0.0} Y: {0:0.0} Z: {2:0.0}", this.droneRigidbody.velocity.y, relativeVelocity.x, relativeVelocity.z));
     }
 
     private void Elevate(float amount)
