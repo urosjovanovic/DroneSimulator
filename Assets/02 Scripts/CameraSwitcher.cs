@@ -46,6 +46,8 @@ public sealed class CameraSwitcher : MonoBehaviour
 			rtsCamera.transform.position = this.Target.transform.position + new Vector3 (2, 2, 2);
 			rtsCamera.transform.LookAt (this.Target.transform.position);
 			dc.RtsMode = true;
+			dc.planeY = this.Target.gameObject.transform.position.y;
+			dc.droneMovementPlane = new Plane(Vector3.up, new Vector3(0, dc.planeY , 0));
 			rtsCamera.GetComponent<RTSCameraController>().enabled = true;
 
 			rtsCamera.enabled = true;

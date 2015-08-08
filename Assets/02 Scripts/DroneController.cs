@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 public sealed class DroneController : MonoBehaviour 
 {
@@ -39,13 +40,6 @@ public sealed class DroneController : MonoBehaviour
     [Range(0, 2)]
     public float HorizontalYAccFactor = 1.0f;
 
-	public bool RtsMode = false;
-
-	float verticalAxis = 0;
-	float horizontalAxis = 0;
-	float tiltAxis = 0;
-	float sidewayTiltAxis = 0;
-
     #endregion
 
     #region Properties
@@ -66,6 +60,26 @@ public sealed class DroneController : MonoBehaviour
     } 
 
     #endregion
+
+	#region RTSParams
+
+	public bool RtsMode = false;
+
+	private float verticalAxis = 0;
+	private float horizontalAxis = 0;
+	private float tiltAxis = 0;
+	private float sidewayTiltAxis = 0;
+	
+	public Plane droneMovementPlane;
+	public float planeY;
+	private GameObject RTSCamera;
+
+	public float scrollFactor = 2f;
+
+	private List<Vector3> destinationPoints;
+	private bool moving = false;
+
+	#endregion
 
 	// Use this for initialization
 	void Start () 
@@ -88,6 +102,9 @@ public sealed class DroneController : MonoBehaviour
                 this.droneCameraViewDirection = this.DroneCamera.transform.forward;
                 this.droneModelAngle = this.droneModel.eulerAngles.y;
             }
+
+			this.RTSCamera = GameObject.Find("RTSCamera");
+			this.destinationPoints = new List<Vector3>();
         }
         catch(Exception ex)
         {
@@ -120,6 +137,10 @@ public sealed class DroneController : MonoBehaviour
 			tiltAxis = Input.GetAxis ("Vertical2");
 			sidewayTiltAxis = Input.GetAxis ("Horizontal2");
 		} else {
+			DrawLine();
+			if(destinationPoints.Count > 0 && !moving) {
+				MoveTo(destinationPoints[0]);
+			}
 		}
 
         foreach (var rotor in this.rotors)
@@ -181,6 +202,52 @@ public sealed class DroneController : MonoBehaviour
         this.rotors[2].Force += force;
     }
 
+	private void DrawLine() {
+		var lineRenderer = gameObject.GetComponent<LineRenderer> ();
+		lineRenderer.SetWidth (0.03f, 0.01f);
+		lineRenderer.SetPosition (0, gameObject.transform.position);
+
+		float scrollWheel = Input.GetAxis("Mouse ScrollWheel");
+
+		if (Input.GetKey (KeyCode.LeftControl)) {
+			planeY += scrollWheel * scrollFactor;
+			droneMovementPlane = new Plane(Vector3.up, new Vector3(0, planeY, 0));
+		}
+
+		var ray = RTSCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+		float rayDistance = 0f;
+
+		if (droneMovementPlane.Raycast (ray, out rayDistance)) {
+			var point = ray.GetPoint(rayDistance);
+			lineRenderer.SetPosition (1, point);
+			if(Input.GetMouseButtonDown(1)) {
+				destinationPoints.Add(point);
+			}
+		} 
+	}
+
+	private void MoveTo(Vector3 position){
+		var zeroY = new Vector3 (position.x, 0, position.z);
+		Debug.Log ("Move to: " + zeroY);
+		var targetDir = zeroY - new Vector3(gameObject.transform.position.x, 0, gameObject.transform.position.z);
+		var angleBetween = Vector3.Angle (gameObject.transform.forward, targetDir);
+
+		if (angleBetween > 5) {
+			Debug.Log ("Rotate: " + angleBetween);
+			horizontalAxis = 1;
+		} else {
+			horizontalAxis = 0;
+
+			if(Vector3.Distance(zeroY, new Vector3(gameObject.transform.position.x, 0, gameObject.transform.position.z)) > 2){
+
+				tiltAxis =0.5f;
+			}
+			else {
+				tiltAxis = 0;
+				destinationPoints.RemoveAt(0);
+			}
+		}		
+	}
 }
 
 public sealed class Rotor

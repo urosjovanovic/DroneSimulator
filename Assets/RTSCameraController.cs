@@ -23,9 +23,9 @@ public class RTSCameraController : MonoBehaviour {
 			rotateAround = Input.mousePosition + new Vector3(0, 0, 2);
 		}
 
-		var rightClick = Input.GetMouseButton (1);
+		var middleClick = Input.GetMouseButton (2);
 
-		if (!rightClick) {
+		if (!middleClick) {
 			if (mouseX < 0) {
 				gameObject.transform.Translate (Vector3.right * -scrollSpeed * Time.deltaTime);
 			} else if (mouseX > Screen.width) {
