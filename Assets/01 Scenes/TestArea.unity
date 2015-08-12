@@ -789,6 +789,12 @@ MonoBehaviour:
   HorizontalXAccFactor: 1
   HorizontalYAccFactor: 1
   RtsMode: 0
+  planeY: 0
+  maxIdleVelocity: .00999999978
+  scrollFactor: 2
+  autoRotateSpeed: .5
+  autoMoveSpeed: .200000003
+  autoRotateAngleTreshold: 1
 --- !u!54 &998782501
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -65,20 +65,26 @@ public sealed class DroneController : MonoBehaviour
 
 	public bool RtsMode = false;
 
-	private float verticalAxis = 0;
+	private float verticalAxis = 0.0f;
 	private float horizontalAxis = 0.0f;
-	private float tiltAxis = 0;
-	private float sidewayTiltAxis = 0;
+	private float tiltAxis = 0.0f;
+	private float sidewayTiltAxis = 0.0f;
 	
 	public Plane droneMovementPlane;
 	public float planeY;
 	private GameObject RTSCamera;
 
-	public float scrollFactor = 2f;
+
 
 	private List<Vector3> destinationPoints;
 	private bool moving = false;
-	private bool inCoroutine = false;
+
+	public float maxIdleVelocity = 0.02f;
+	public float scrollFactor = 2f;
+	public float autoRotateSpeed = 0.5f;
+	public float autoMoveSpeed = 0.2f;
+	public float autoRotateAngleTreshold = 1;
+
 	#endregion
 
 	// Use this for initialization
@@ -126,6 +132,10 @@ public sealed class DroneController : MonoBehaviour
             this.droneCameraViewDirection = Quaternion.AngleAxis(cameraAxis, -this.DroneCamera.transform.right) * this.droneCameraViewDirection;
         this.DroneCamera.transform.forward = this.droneCameraViewDirection;
         this.droneModelAngle = this.droneModel.eulerAngles.y;
+
+		if (RtsMode) {
+			DrawLine();
+		}
 	}
 
     // Run all physics based stuff here
@@ -137,12 +147,15 @@ public sealed class DroneController : MonoBehaviour
 			tiltAxis = Input.GetAxis ("Vertical2");
 			sidewayTiltAxis = Input.GetAxis ("Horizontal2");
 		} else {
-			if(!inCoroutine) {
+			if(!moving) {
+				verticalAxis = 0.0f;
+				horizontalAxis = 0.0f;
 				tiltAxis = 0.0f;
+				sidewayTiltAxis = 0.0f;
 			}
 
-			DrawLine();
-			if(destinationPoints.Count > 0 && !moving) {
+			if(destinationPoints.Count > 0 && !moving && droneRigidbody.velocity.magnitude <  maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1) {
+				StabilizeDrone();
 				StartCoroutine("MoveTo", 0);
 			}
 		}
@@ -163,10 +176,10 @@ public sealed class DroneController : MonoBehaviour
         if (tiltAxis >= 0 && relativeVelocity.z < 0 || tiltAxis <= 0 && relativeVelocity.z > 0) {
 			tiltAxis -= relativeVelocity.z * this.HorizontalXStabilizationFactor;
 		} 
-		Debug.Log ("Tilt axis: " + tiltAxis);
+
         this.droneRigidbody.AddForce(Vector3.Cross(this.droneModel.right, Vector3.up).normalized * tiltAxis * this.MaxSpeed * this.HorizontalXAccFactor);
 
-        if (sidewayTiltAxis >= 0 && relativeVelocity.x < 0 || sidewayTiltAxis <= 0 && relativeVelocity.x > 0 && !RtsMode)
+        if (sidewayTiltAxis >= 0 && relativeVelocity.x < 0 || sidewayTiltAxis <= 0 && relativeVelocity.x > 0)
             sidewayTiltAxis -= relativeVelocity.x * this.HorizontalYStabilizationFactor;
         this.droneRigidbody.AddForce(Vector3.Cross(Vector3.up, this.droneModel.forward).normalized * sidewayTiltAxis * this.MaxSpeed * this.HorizontalYAccFactor);
 		
@@ -235,59 +248,76 @@ public sealed class DroneController : MonoBehaviour
 
 	private IEnumerator MoveTo(int destinationPointIndex){
 		moving = true;
-		Debug.Log ("Move to: " + destinationPoints[destinationPointIndex]);
 
 		yield return StartCoroutine("RotateToPoint", destinationPoints [destinationPointIndex]);
-		yield return new WaitForSeconds (1);
+		yield return new WaitForSeconds (0.5f);
+		yield return StartCoroutine ("ElevateToPoint", destinationPoints [destinationPointIndex]);
+		yield return new WaitForSeconds (0.5f);
 		yield return StartCoroutine ("MoveForward", Vector3.Distance(gameObject.transform.position, destinationPoints[destinationPointIndex]));
 
 		destinationPoints.RemoveAt (destinationPointIndex);
 		moving = false;
-		yield return null;
+		yield return new WaitForSeconds(0.5f);
 	}
 
 	 private IEnumerator RotateToPoint(Vector3 point) {
-		Debug.Log ("Rotate to point.");
 
 		var dronePos = new Vector3 (gameObject.transform.position.x, 0, gameObject.transform.position.z);
 		var pointPos = new Vector3 (point.x, 0, point.z);
 		var rotateDir = pointPos - dronePos;
 		var angleBetween = Vector3.Angle (gameObject.transform.forward, rotateDir);
 
-		while (angleBetween > 3) {
+		while (angleBetween > autoRotateAngleTreshold) {
 			angleBetween = Vector3.Angle (gameObject.transform.forward, rotateDir);
-			horizontalAxis = 0.5f;
+			horizontalAxis = autoRotateSpeed;
 			yield return null;
+			horizontalAxis = 0.0f;
 		}
+		
+		yield return null;
+	}
 
-		horizontalAxis = 0.0f;
-		Debug.Log ("Rotated");
+	private IEnumerator ElevateToPoint(Vector3 point) {
+		var targetY = point.y;
+		var droneY = gameObject.transform.position.y;
+		
+		while (Math.Abs(droneY - targetY) > 0.1) {
+			if(droneY < targetY){
+				verticalAxis = 0.1f;
+			}
+			else {
+				verticalAxis = -0.1f;
+			}
+			yield return null;
+			verticalAxis = 0.0f;
+			droneY = gameObject.transform.position.y;
+		}
+	
 		yield return null;
 	}
 
 	private IEnumerator MoveForward(float distance) {
-		inCoroutine = true;
-		Debug.Log ("Move forward.");
 		var target = gameObject.transform.position + gameObject.transform.forward * distance;
-		Debug.Log ("Position: " + gameObject.transform.position + ", target: " + target);
 
 		while (Vector3.Distance(gameObject.transform.position, target) > 0.1) {
-			tiltAxis = 0.2f;
+			tiltAxis = autoMoveSpeed;
 			yield return null;
 			tiltAxis = 0.0f;
 		}
-	
-		inCoroutine = false;
-		Debug.Log ("Moved forward for: " + distance);
 
 		yield return null;
 	}
 
-	public void ClearAxes() {
-		this.verticalAxis = 0.0f;
-		this.horizontalAxis = 0.0f;
-		this.tiltAxis = 0.0f;
-		this.sidewayTiltAxis = 0.0f;
+	private void StabilizeDrone() {
+		droneRigidbody.angularVelocity = Vector3.zero;
+		droneRigidbody.velocity = Vector3.zero;
+	}
+
+	public void ClearAutoMovement() {
+		this.destinationPoints.Clear ();
+		StopCoroutine ("MoveForward");
+		StopCoroutine ("RotateToPoint");
+		StopCoroutine ("MoveTo");
 	}
 }
 
