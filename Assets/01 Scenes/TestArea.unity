@@ -178,6 +178,66 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
+--- !u!1 &27232360
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 27232361}
+  - 108: {fileID: 27232362}
+  m_Layer: 0
+  m_Name: GPSLight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &27232361
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 27232360}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -.000199999995, y: .0238000005, z: -.068599999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 998782503}
+  m_RootOrder: 18
+--- !u!108 &27232362
+Light:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 27232360}
+  m_Enabled: 0
+  serializedVersion: 6
+  m_Type: 2
+  m_Color: {r: .0666666701, g: .890196145, b: .113725498, a: 1}
+  m_Intensity: .75
+  m_Range: .150000006
+  m_SpotAngle: 30
+  m_CookieSize: 10
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_Strength: 1
+    m_Bias: .0500000007
+    m_NormalBias: .400000006
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_Lightmapping: 4
+  m_BounceIntensity: 1
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_AreaSize: {x: 1, y: 1}
 --- !u!1001 &321057767
 Prefab:
   m_ObjectHideFlags: 0
@@ -702,6 +762,21 @@ BoxCollider:
 Transform:
   m_PrefabParentObject: {fileID: 400024, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
   m_PrefabInternal: {fileID: 998782491}
+--- !u!114 &998782504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 998782499}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8914f59a05ad9e0459189995d639ac72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GPSLightModel: {fileID: 1513914611}
+  GPSLight: {fileID: 27232362}
+  BlinkInterval: 1
+  BlinkDuration: .100000001
 --- !u!1 &1490009133
 GameObject:
   m_ObjectHideFlags: 0
@@ -762,6 +837,10 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
+--- !u!4 &1513914611 stripped
+Transform:
+  m_PrefabParentObject: {fileID: 400028, guid: ad146b6c6d155634199c4e8d12d1a94d, type: 3}
+  m_PrefabInternal: {fileID: 998782491}
 --- !u!1 &1780502744
 GameObject:
   m_ObjectHideFlags: 0
