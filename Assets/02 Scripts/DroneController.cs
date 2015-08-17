@@ -112,9 +112,6 @@ public sealed class DroneController : MonoBehaviour
         float tiltAxis = Input.GetAxis("Vertical2");
         float sidewayTiltAxis = Input.GetAxis("Horizontal2");
 
-        foreach (var rotor in this.rotors)
-            rotor.Force = 2.4525f;
-
         this.Elevate(verticalAxis * this.VerticalAccelerationFactor);
         this.Tilt(tiltAxis);
         this.SidewayTilt(sidewayTiltAxis);
@@ -144,6 +141,8 @@ public sealed class DroneController : MonoBehaviour
 
     private void Elevate(float amount)
     {
+        foreach (var rotor in this.rotors)
+            rotor.Force = 2.4525f;
         foreach (var rotor in this.rotors)
         {
             rotor.Force += amount;
@@ -186,7 +185,7 @@ public sealed class Rotor
     public float Force
     {
         get { return this.force; }
-        set { this.force = Mathf.Clamp(value, 0, float.MaxValue); }
+        set { this.force = value; }
     }
 
     public Transform Transform
