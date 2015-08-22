@@ -2,7 +2,7 @@
 using System;
 using System.Collections;
 
-public sealed class DroneController : MonoBehaviour 
+public sealed class DroneController : MonoBehaviour
 {
     private Rotor[] rotors;
     private Transform droneModel;
@@ -56,12 +56,12 @@ public sealed class DroneController : MonoBehaviour
     private bool CameraPitchSupported
     {
         get { return this.CameraPitchSystem != null; }
-    } 
+    }
 
     #endregion
 
-	// Use this for initialization
-	void Start () 
+    // Use this for initialization
+    void Start()
     {
         try
         {
@@ -76,36 +76,38 @@ public sealed class DroneController : MonoBehaviour
 
             this.rotors = new Rotor[4] { new Rotor(this.FrontLeftRotor), new Rotor(this.FrontRightRotor), new Rotor(this.BackLeftRotor), new Rotor(this.BackRightRotor) };
 
+            this.droneRigidbody.centerOfMass = new Vector3(0f, -0.1f, 0f); //Fixes the random sideways tilting bug
+
             if (this.HasCamera)
             {
                 this.droneCameraViewDirection = this.DroneCamera.transform.forward;
                 this.droneModelAngle = this.droneModel.eulerAngles.y;
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.LogError("DroneController Initialization failed: " + ex.Message);
             this.enabled = false;
         }
-	}
-	
-	// Update is called once per frame
-	void Update () 
+    }
+
+    // Update is called once per frame
+    void Update()
     {
         foreach (var rotor in this.rotors)
-            rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600*Time.deltaTime);
+            rotor.Transform.RotateAround(rotor.Transform.GetObjectCenter(), this.droneModel.up, 3600 * Time.deltaTime);
 
         float cameraAxis = Input.GetAxis("CameraAxis");
         float cameraAngle = Vector3.Angle(Vector3.up, this.droneCameraViewDirection);
         this.droneCameraViewDirection = Quaternion.Euler(0, this.droneModel.eulerAngles.y - this.droneModelAngle, 0) * this.droneCameraViewDirection;
-        if(cameraAngle >= 90 && cameraAxis >= 0 || cameraAngle < 179 && cameraAxis <= 0)
+        if (cameraAngle >= 90 && cameraAxis >= 0 || cameraAngle < 179 && cameraAxis <= 0)
             this.droneCameraViewDirection = Quaternion.AngleAxis(cameraAxis, -this.DroneCamera.transform.right) * this.droneCameraViewDirection;
         this.DroneCamera.transform.forward = this.droneCameraViewDirection;
         this.droneModelAngle = this.droneModel.eulerAngles.y;
-	}
+    }
 
     // Run all physics based stuff here
-    void FixedUpdate ()
+    void FixedUpdate()
     {
         float verticalAxis = Input.GetAxis("Vertical");
         float horizontalAxis = Input.GetAxis("Horizontal");
@@ -153,22 +155,21 @@ public sealed class DroneController : MonoBehaviour
 
     private void Tilt(float amount)
     {
-        float force = amount * rotors[0].Force / 2;
-        this.rotors[0].Force -= force;
-        this.rotors[1].Force -= force;
-        this.rotors[2].Force += force;
-        this.rotors[3].Force += force;
+        const float mult = 1;
+        this.rotors[0].Force -= amount * rotors[0].Force * mult;
+        this.rotors[1].Force -= amount * rotors[1].Force * mult;
+        this.rotors[2].Force += amount * rotors[2].Force * mult;
+        this.rotors[3].Force += amount * rotors[3].Force * mult;
     }
 
     private void SidewayTilt(float amount)
     {
-        float force = amount * rotors[0].Force / 2;
-        this.rotors[1].Force -= force;
-        this.rotors[3].Force -= force;
-        this.rotors[0].Force += force;
-        this.rotors[2].Force += force;
+        const float mult = 1;
+        this.rotors[1].Force -= amount * rotors[1].Force * mult;
+        this.rotors[3].Force -= amount * rotors[3].Force * mult;
+        this.rotors[0].Force += amount * rotors[0].Force * mult;
+        this.rotors[2].Force += amount * rotors[2].Force * mult;
     }
-
 }
 
 public sealed class Rotor
