@@ -3,7 +3,7 @@ using System.Collections;
 
 public sealed class CameraController : MonoBehaviour
 {
-    private int activeCameraIndex;
+    private int activeCameraIndex = 0;
     private bool showPreviewCam;
     private int previewCamPadding;
     private Camera[] cameras;
@@ -13,6 +13,7 @@ public sealed class CameraController : MonoBehaviour
     public float PreviewCameraWidth = 0.16f;
     public Camera ThirdPersonCamera;
     public Camera DroneCamera;
+	public Camera RTSCamera;
 
     private Camera ActiveCam
     {
@@ -55,6 +56,9 @@ public sealed class CameraController : MonoBehaviour
             else
                 this.ShowActiveCam();
         }
+		if (Input.GetButtonDown ("RTSCamToggle")) {
+			this.SwitchRtsCamera();
+		}
     }
 
     private void OnGUI()
@@ -99,4 +103,30 @@ public sealed class CameraController : MonoBehaviour
             this.PreviewCam = this.DroneCamera;
         }
     }
+
+	public void SwitchRtsCamera() {		
+		this.cameras [activeCameraIndex].enabled = false;
+		
+		var drone = GameObject.Find ("DJIPhantom");
+		DroneController dc = drone.GetComponent<DroneController>();
+		
+		if (this.RTSCamera.enabled == false) {
+			this.RTSCamera.transform.position = drone.transform.position + new Vector3 (2, 2, 2);
+			this.RTSCamera.transform.LookAt (drone.transform.position);
+			this.RTSCamera.GetComponent<RTSCameraController>().enabled = true;
+			dc.RtsMode = true;
+			dc.planeY = drone.gameObject.transform.position.y;
+			dc.droneMovementPlane = new Plane(Vector3.up, new Vector3(0, dc.planeY , 0));
+			drone.GetComponent<LineRenderer>().enabled = true;
+			dc.ClearAutoMovement();
+			this.RTSCamera.enabled = true;
+		} else {
+			drone.GetComponent<LineRenderer>().enabled = false;
+			this.RTSCamera.GetComponent<RTSCameraController>().enabled = false;
+			this.RTSCamera.enabled = false;
+			this.activeCameraIndex = 0;
+			dc.RtsMode = false;
+			this.cameras[this.activeCameraIndex].enabled = true;
+		}
+	}
 }
