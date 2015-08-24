@@ -738,7 +738,7 @@ MonoBehaviour:
   scrollFactor: 2
   autoRotateSpeed: .5
   autoMoveSpeed: .200000003
-  autoRotateAngleTreshold: 1
+  autoRotateAngleTreshold: .25
 --- !u!54 &998782501
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -791,7 +791,7 @@ LineRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 998782499}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_Materials:
