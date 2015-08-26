@@ -437,6 +437,105 @@ MonoBehaviour:
   ThirdPersonCamera: {fileID: 8146614}
   DroneCamera: {fileID: 1780502749}
   RTSCamera: {fileID: 1375051908}
+  TopDownCamera: {fileID: 648797400}
+--- !u!1 &648797396
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 648797401}
+  - 20: {fileID: 648797400}
+  - 124: {fileID: 648797399}
+  - 92: {fileID: 648797398}
+  - 81: {fileID: 648797397}
+  - 114: {fileID: 648797402}
+  m_Layer: 0
+  m_Name: TopDownCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!81 &648797397
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_Enabled: 0
+--- !u!92 &648797398
+Behaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_Enabled: 1
+--- !u!124 &648797399
+Behaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_Enabled: 1
+--- !u!20 &648797400
+Camera:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_Enabled: 0
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: .192156866, g: .301960796, b: .474509805, a: .0196078438}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: .300000012
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_HDR: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: .0219999999
+  m_StereoMirrorMode: 0
+--- !u!4 &648797401
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 10
+--- !u!114 &648797402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 648797396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d260087f8cdfb04e9e1c0780e94b797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scrollSpeed: 1
 --- !u!1 &708376392
 GameObject:
   m_ObjectHideFlags: 0
@@ -723,6 +822,7 @@ MonoBehaviour:
   BackLeftRotor: {fileID: 998782494}
   BackRightRotor: {fileID: 998782495}
   DroneCamera: {fileID: 1780502749}
+  TopDownCamera: {fileID: 648797400}
   CameraRollSystem: {fileID: 998782497}
   CameraPitchSystem: {fileID: 998782498}
   MaxSpeed: 6
@@ -739,6 +839,8 @@ MonoBehaviour:
   autoRotateSpeed: .5
   autoMoveSpeed: .200000003
   autoRotateAngleTreshold: .25
+  TopDownMode: 0
+  frozen: 0
 --- !u!54 &998782501
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -22,6 +22,7 @@ public sealed class DroneController : MonoBehaviour
 
     //Optional params
     public Camera DroneCamera;
+	public Camera TopDownCamera;
     public Transform CameraRollSystem;
     public Transform CameraPitchSystem;
 
@@ -87,6 +88,9 @@ public sealed class DroneController : MonoBehaviour
     public float autoMoveSpeed = 0.2f;
     public float autoRotateAngleTreshold = 1;
 
+	public bool TopDownMode = false;
+	public bool frozen = false;
+
     #endregion
 
     // Use this for initialization
@@ -148,9 +152,8 @@ public sealed class DroneController : MonoBehaviour
             }
 
 
-            if (destinationPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1)
+            if (destinationPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1 && !frozen)
             {
-                //StabilizeDrone();
                 StartCoroutine("MoveTo", 0);
             }
         }
@@ -166,10 +169,11 @@ public sealed class DroneController : MonoBehaviour
         this.DroneCamera.transform.forward = this.droneCameraViewDirection;
         this.droneModelAngle = this.droneModel.eulerAngles.y;
 
-        if (RtsMode)
-        {
-            DrawLine();
-        }
+        if (RtsMode && !TopDownMode) {
+			DrawLine ();
+		} else if (RtsMode && TopDownMode) {
+			DrawTopDown();
+		}
     }
 
     // Run all physics based stuff here
@@ -236,7 +240,7 @@ public sealed class DroneController : MonoBehaviour
     private void DrawLine()
     {
         var lineRenderer = gameObject.GetComponent<LineRenderer>();
-        lineRenderer.SetWidth(0.03f, 0.01f);
+        lineRenderer.SetWidth(0.01f, 0.01f);
         lineRenderer.SetPosition(0, gameObject.transform.position);
 
         float scrollWheel = Input.GetAxis("Mouse ScrollWheel");
@@ -364,7 +368,6 @@ public sealed class DroneController : MonoBehaviour
         }
 
         moving = false;
-        Debug.Log("DONE");
         yield return null;
     }
 
@@ -381,6 +384,31 @@ public sealed class DroneController : MonoBehaviour
         StopCoroutine("RotateToPoint");
         StopCoroutine("MoveTo");
     }
+
+	public void DrawTopDown() {
+		var ray = TopDownCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+		float rayDistance = 0f;
+		
+		if (droneMovementPlane.Raycast(ray, out rayDistance))
+		{
+			var point = ray.GetPoint(rayDistance);
+			if (Input.GetMouseButtonDown(1))
+			{
+				var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+				sphere.GetComponent<SphereCollider>().isTrigger = true;
+				sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+				sphere.transform.position = point;
+				sphere.AddComponent<TriggerDestroy>();
+				destinationPoints.Add(point);
+				DrawPointInput(destinationPoints.Count - 1);
+			}
+		}
+
+	}
+
+	public void DrawPointInput(int destinationPointIndex) {
+		Vector3 point = destinationPoints [destinationPointIndex];
+	}
 }
 
 public sealed class Rotor
