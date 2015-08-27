@@ -77,7 +77,7 @@ public sealed class DroneController : MonoBehaviour
 
 
 
-    private List<Vector3> destinationPoints;
+	public List<Vector3> DestinationPoints { get; set; }
     private bool moving = false;
     private bool rotating = false;
     private bool inCoroutine = false;
@@ -118,7 +118,7 @@ public sealed class DroneController : MonoBehaviour
             }
 
             this.RTSCamera = GameObject.Find("RTSCamera");
-            this.destinationPoints = new List<Vector3>();
+            this.DestinationPoints = new List<Vector3>();
         }
         catch (Exception ex)
         {
@@ -152,7 +152,7 @@ public sealed class DroneController : MonoBehaviour
             }
 
 
-            if (destinationPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1 && !frozen)
+            if (DestinationPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1 && !frozen)
             {
                 StartCoroutine("MoveTo", 0);
             }
@@ -172,7 +172,7 @@ public sealed class DroneController : MonoBehaviour
         if (RtsMode && !TopDownMode) {
 			DrawLine ();
 		} else if (RtsMode && TopDownMode) {
-			DrawTopDown();
+
 		}
     }
 
@@ -267,7 +267,7 @@ public sealed class DroneController : MonoBehaviour
                 sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                 sphere.transform.position = point;
                 sphere.AddComponent<TriggerDestroy>();
-                destinationPoints.Add(point);
+                DestinationPoints.Add(point);
             }
         }
     }
@@ -275,15 +275,15 @@ public sealed class DroneController : MonoBehaviour
     private IEnumerator MoveTo(int destinationPointIndex)
     {
         inCoroutine = true;
-        yield return StartCoroutine("RotateToPoint", destinationPoints[destinationPointIndex]);
+        yield return StartCoroutine("RotateToPoint", DestinationPoints[destinationPointIndex]);
         yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine("ElevateToPoint", destinationPoints[destinationPointIndex]);
+        yield return StartCoroutine("ElevateToPoint", DestinationPoints[destinationPointIndex]);
         yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine("MoveForward", Vector3.Distance(gameObject.transform.position, destinationPoints[destinationPointIndex]));
+        yield return StartCoroutine("MoveForward", Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]));
 
-        if (Vector3.Distance(gameObject.transform.position, destinationPoints[destinationPointIndex]) <= 0.2)
+        if (Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]) <= 0.2)
         {
-            destinationPoints.RemoveAt(destinationPointIndex);
+            DestinationPoints.RemoveAt(destinationPointIndex);
         }
 
         inCoroutine = false;
@@ -379,36 +379,11 @@ public sealed class DroneController : MonoBehaviour
 
     public void ClearAutoMovement()
     {
-        this.destinationPoints.Clear();
+        this.DestinationPoints.Clear();
         StopCoroutine("MoveForward");
         StopCoroutine("RotateToPoint");
         StopCoroutine("MoveTo");
     }
-
-	public void DrawTopDown() {
-		var ray = TopDownCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
-		float rayDistance = 0f;
-		
-		if (droneMovementPlane.Raycast(ray, out rayDistance))
-		{
-			var point = ray.GetPoint(rayDistance);
-			if (Input.GetMouseButtonDown(1))
-			{
-				var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-				sphere.GetComponent<SphereCollider>().isTrigger = true;
-				sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-				sphere.transform.position = point;
-				sphere.AddComponent<TriggerDestroy>();
-				destinationPoints.Add(point);
-				DrawPointInput(destinationPoints.Count - 1);
-			}
-		}
-
-	}
-
-	public void DrawPointInput(int destinationPointIndex) {
-		Vector3 point = destinationPoints [destinationPointIndex];
-	}
 }
 
 public sealed class Rotor
