@@ -13,9 +13,9 @@ public sealed class CameraController : MonoBehaviour
         PreviewCameraWidth = 0.16f;
     public Camera ThirdPersonCamera;
     public Camera DroneCamera;
+    public Camera FirstPersonCamera;
     public Camera RTSCamera;
     public Camera TopDownCamera;
-    public Camera FirstPersonCamera;
 
     #region Properties
 
@@ -64,11 +64,11 @@ public sealed class CameraController : MonoBehaviour
                 this.ShowPreviewCam();
         }
 
-        if (Input.GetButtonDown("RTSCamToggle"))
-        {
-            this.SwitchRtsCamera();
-        }
-        else if (Input.GetButtonDown("TopDownCamToggle"))
+        //if (Input.GetButtonDown("RTSCamToggle"))
+        //{
+        //    this.SwitchRtsCamera();
+        //}
+        if(Input.GetButtonDown("TopDownCamToggle"))
         {
             this.SwitchTopDownCamera();
         }
@@ -119,8 +119,6 @@ public sealed class CameraController : MonoBehaviour
 
     public void SwitchRtsCamera()
     {
-        this.cameras[this.activeCameraIndex].enabled = false;
-
         var drone = GameObject.Find("DJIPhantom");
         var dc = drone.GetComponent<DroneController>();
 
@@ -135,6 +133,7 @@ public sealed class CameraController : MonoBehaviour
             drone.GetComponent<LineRenderer>().enabled = true;
             dc.ClearAutoMovement();
             this.RTSCamera.enabled = true;
+            this.RTSCamera.depth = 0;
         }
         else
         {
@@ -149,35 +148,37 @@ public sealed class CameraController : MonoBehaviour
 
     public void SwitchTopDownCamera()
     {
-        this.cameras[this.activeCameraIndex].enabled = false;
-        this.RTSCamera.enabled = false;
-
         var drone = GameObject.Find("DJIPhantom");
         var dc = drone.GetComponent<DroneController>();
 
         if (this.TopDownCamera.enabled == false)
         {
+            foreach (var camera in this.cameras)
+                camera.depth = -1;
+            this.TopDownCamera.depth = 0;
+            this.TopDownCamera.enabled = true;
             this.TopDownCamera.transform.position = drone.transform.position + new Vector3(0, 5, 0);
             this.TopDownCamera.transform.LookAt(drone.transform.position);
             this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = true;
+            drone.GetComponent<LineRenderer>().enabled = true;
             dc.RtsMode = true;
             dc.TopDownMode = true;
             dc.planeY = drone.gameObject.transform.position.y;
             dc.droneMovementPlane = new Plane(Vector3.up, new Vector3(0, dc.planeY, 0));
-            drone.GetComponent<LineRenderer>().enabled = true;
             dc.ClearAutoMovement();
-            this.TopDownCamera.enabled = true;
         }
         else
         {
-            drone.GetComponent<LineRenderer>().enabled = false;
-            this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = false;
+            foreach (var camera in this.cameras)
+                camera.depth = -1;
+            this.TopDownCamera.depth = -1;
             this.TopDownCamera.enabled = false;
-            this.activeCameraIndex = 0;
+            this.ShowActiveCam();
+            this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = false;
+            drone.GetComponent<LineRenderer>().enabled = false;
             dc.RtsMode = false;
             dc.TopDownMode = false;
             dc.frozen = false;
-            this.cameras[this.activeCameraIndex].enabled = true;
         }
     }
 }
