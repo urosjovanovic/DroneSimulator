@@ -130,14 +130,7 @@ public sealed class DroneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!RtsMode)
-        {
-            verticalAxis = Input.GetAxis("Vertical");
-            horizontalAxis = Input.GetAxis("Horizontal");
-            tiltAxis = Input.GetAxis("Vertical2");
-            sidewayTiltAxis = Input.GetAxis("Horizontal2");
-        }
-        else
+        if(RtsMode)
         {
             if (!moving)
             {
@@ -169,16 +162,25 @@ public sealed class DroneController : MonoBehaviour
         this.DroneCamera.transform.forward = this.droneCameraViewDirection;
         this.droneModelAngle = this.droneModel.eulerAngles.y;
 
-        if (RtsMode && !TopDownMode) {
-			DrawLine ();
-		} else if (RtsMode && TopDownMode) {
-
-		}
+        if (RtsMode && !TopDownMode)
+            DrawLine();
+        else if (RtsMode && TopDownMode)
+        {
+        }
     }
 
     // Run all physics based stuff here
     void FixedUpdate()
     {
+        if (!RtsMode)
+        {
+            verticalAxis = Input.GetAxis("Vertical");
+            horizontalAxis = Input.GetAxis("Horizontal");
+            tiltAxis = Input.GetAxis("Vertical2");
+            sidewayTiltAxis = Input.GetAxis("Horizontal2");
+        }
+
+
         this.Elevate(verticalAxis * this.VerticalAccelerationFactor);
         this.Tilt(tiltAxis);
         this.SidewayTilt(sidewayTiltAxis);
