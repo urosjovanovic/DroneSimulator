@@ -34,7 +34,7 @@ public class TopDownCameraController : MonoBehaviour
         mouseX = Input.mousePosition.x;
         mouseY = Input.mousePosition.y;
 
-        this.cameraComponent.orthographicSize = Mathf.Clamp(this.cameraComponent.orthographicSize + Input.GetAxis("Mouse ScrollWheel") * this.zoomSpeed, 0.1f, 10);
+        this.cameraComponent.orthographicSize = Mathf.Clamp(this.cameraComponent.orthographicSize + Input.GetAxis("Mouse ScrollWheel") * this.zoomSpeed, 0.1f, 100);
 
         if (droneController.RtsMode && droneController.TopDownMode)
             DrawTopDown();

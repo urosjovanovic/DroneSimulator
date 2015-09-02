@@ -157,7 +157,7 @@ public sealed class CameraController : MonoBehaviour
                 camera.depth = -1;
             this.TopDownCamera.depth = 0;
             this.TopDownCamera.enabled = true;
-            this.TopDownCamera.transform.position = drone.transform.position + new Vector3(0, 5, 0);
+            this.TopDownCamera.transform.position = drone.transform.position + new Vector3(0, 100, 0);
             this.TopDownCamera.transform.LookAt(drone.transform.position);
             this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = true;
             drone.GetComponent<LineRenderer>().enabled = true;

@@ -457,6 +457,10 @@ Prefab:
       propertyPath: m_IgnoreReversedGraphics
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 11488814, guid: bd5017584af9d0e44b5d807dff6c73a9, type: 2}
+      propertyPath: UseMetersPerSecond
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: bd5017584af9d0e44b5d807dff6c73a9, type: 2}
   m_IsPrefabParent: 0
@@ -1278,11 +1282,11 @@ MonoBehaviour:
   HorizontalYAccFactor: 1
   RtsMode: 0
   planeY: 0
-  maxIdleVelocity: .0199999996
-  scrollFactor: 2
-  autoRotateSpeed: .5
-  autoMoveSpeed: .200000003
-  autoRotateAngleTreshold: .25
+  MaxIdleVelocity: .0199999996
+  AutoRotateSpeed: .5
+  AutoRotateAngleTreshold: .25
+  AutoElevateSpeed: .100000001
+  AutoMoveSpeed: .200000003
   TopDownMode: 0
   frozen: 0
 --- !u!54 &998782501

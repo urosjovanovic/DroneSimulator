@@ -75,18 +75,28 @@ public sealed class DroneController : MonoBehaviour
     public float planeY;
     private GameObject RTSCamera;
 
-
-
-	public List<Vector3> DestinationPoints { get; set; }
     private bool moving = false;
     private bool rotating = false;
     private bool inCoroutine = false;
+    private float scrollFactor = 2f; //TODO: Ovo izbaciti odavde
 
-    public float maxIdleVelocity = 0.02f;
-    public float scrollFactor = 2f;
-    public float autoRotateSpeed = 0.5f;
-    public float autoMoveSpeed = 0.2f;
-    public float autoRotateAngleTreshold = 1;
+    private float maxIdleVelocity;
+    private float autoRotateSpeed;
+    private float autoRotateAngleTreshold;
+    private float autoElevateSpeed;
+    private float autoMoveSpeed;
+
+    public List<Vector3> DestinationPoints { get; set; }
+    [Range(0, 1)]
+    public float MaxIdleVelocity = 0.02f;
+    [Range(0, 1)]
+    public float AutoRotateSpeed = 0.5f;
+    [Range(0, 1)]
+    public float AutoRotateAngleTreshold = 0.25f;
+    [Range(0, 1)]
+    public float AutoElevateSpeed = 0.1f;
+    [Range(0, 1)]
+    public float AutoMoveSpeed = 0.2f;
 
 	public bool TopDownMode = false;
 	public bool frozen = false;
@@ -116,6 +126,12 @@ public sealed class DroneController : MonoBehaviour
                 this.droneCameraViewDirection = this.DroneCamera.transform.forward;
                 this.droneModelAngle = this.droneModel.eulerAngles.y;
             }
+
+            this.maxIdleVelocity = MaxIdleVelocity;
+            this.autoRotateSpeed = AutoRotateSpeed;
+            this.autoRotateAngleTreshold = AutoRotateAngleTreshold;
+            this.autoElevateSpeed = AutoElevateSpeed;
+            this.autoMoveSpeed = AutoMoveSpeed;
 
             this.RTSCamera = GameObject.Find("RTSCamera");
             this.DestinationPoints = new List<Vector3>();
@@ -336,24 +352,26 @@ public sealed class DroneController : MonoBehaviour
 
     private IEnumerator ElevateToPoint(Vector3 point)
     {
-        var targetY = point.y;
-        var droneY = gameObject.transform.position.y;
+        float targetY = point.y;
+        float droneY = gameObject.transform.position.y;
+        float deltaY = targetY - droneY;
 
-        while (Math.Abs(droneY - targetY) > 0.1)
+        while (Math.Abs(deltaY) > 0.1 && autoElevateSpeed > 0)
         {
-            if (droneY < targetY)
-            {
-                verticalAxis = 0.1f;
-            }
-            else
-            {
-                verticalAxis = -0.1f;
-            }
+            float verticalVelocity = droneRigidbody.velocity.y;
+            if (Math.Abs(verticalVelocity) > AutoElevateSpeed * 10)
+                if (Math.Abs(deltaY) < (droneRigidbody.velocity.y > 0 ? 0.3 : 0.45))
+                    autoElevateSpeed = 0;
+
+            verticalAxis = Math.Sign(targetY - droneY) * autoElevateSpeed;
+
             yield return null;
             verticalAxis = 0.0f;
             droneY = gameObject.transform.position.y;
+            deltaY = targetY - droneY;
         }
 
+        autoElevateSpeed = AutoElevateSpeed;
         yield return null;
     }
 
