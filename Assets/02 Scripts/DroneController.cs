@@ -146,6 +146,8 @@ public sealed class DroneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.LogFormat("In Coroutine: {0}, Moving: {1}, Rotating: {2}", inCoroutine, moving, rotating);
+
         if(RtsMode)
         {
             if (!moving)
@@ -297,12 +299,10 @@ public sealed class DroneController : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine("ElevateToPoint", DestinationPoints[destinationPointIndex]);
         yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine("MoveForward", Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]));
+        yield return StartCoroutine("MoveForward", DestinationPoints[destinationPointIndex]);
 
-        if (Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]) <= 0.2)
-        {
+        if (Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]) <= 0.5)
             DestinationPoints.RemoveAt(destinationPointIndex);
-        }
 
         inCoroutine = false;
         yield return null;
@@ -324,29 +324,20 @@ public sealed class DroneController : MonoBehaviour
         while (angleBetween > autoRotateAngleTreshold)
         {
             angleBetween = Vector3.Angle(gameObject.transform.forward, rotateDir);
-
             if (angleBetween < 10)
                 autoRotateSpeed = Mathf.Clamp(autoRotateSpeed / 2, 0.1f, 1.0f);
-
-
             // rotate LEFT
             if (cross.z > 0)
-            {
                 horizontalAxis = -autoRotateSpeed;
-            }
             // rotate RIGHT
             else
-            {
                 horizontalAxis = autoRotateSpeed;
-            }
-
-
             yield return null;
             horizontalAxis = 0.0f;
         }
 
         rotating = false;
-        autoRotateSpeed = 0.5f;
+        autoRotateSpeed = AutoRotateSpeed;
         yield return null;
     }
 
@@ -375,19 +366,22 @@ public sealed class DroneController : MonoBehaviour
         yield return null;
     }
 
-    private IEnumerator MoveForward(float distance)
+    private IEnumerator MoveForward(Vector3 target)
     {
         moving = true;
-        var target = gameObject.transform.position + gameObject.transform.forward * distance;
-
-        while (Vector3.Distance(gameObject.transform.position, target) > 0.2)
+        while (Vector3.Distance(gameObject.transform.position, target) > 0.2 && autoMoveSpeed > 0)
         {
+            float angle = AngleTo(target);
+            horizontalAxis = Math.Abs(angle) > 0.05 ? Math.Sign(angle) * 0.1f : 0.0f;
+            if (Vector3.Distance(gameObject.transform.position, target) < droneRigidbody.velocity.magnitude / 8)
+                autoMoveSpeed = 0;
             tiltAxis = autoMoveSpeed;
             yield return null;
             tiltAxis = 0.0f;
+            horizontalAxis = 0.0f;
         }
-
         moving = false;
+        autoMoveSpeed = AutoMoveSpeed;
         yield return null;
     }
 
@@ -395,6 +389,17 @@ public sealed class DroneController : MonoBehaviour
     {
         droneRigidbody.angularVelocity = Vector3.zero;
         droneRigidbody.velocity = Vector3.zero;
+    }
+
+    private float AngleTo(Vector3 target)
+    {
+        var dronePos = new Vector3(gameObject.transform.position.x, 0, gameObject.transform.position.z);
+        var pointPos = new Vector3(target.x, 0, target.z);
+        Vector3 rotateDir = pointPos - dronePos;
+        Vector2 v1 = new Vector2(gameObject.transform.forward.x, gameObject.transform.forward.z);
+        Vector2 v2 = new Vector2(rotateDir.x, rotateDir.z);
+        Vector3 cross = Vector3.Cross(v1, v2);
+        return -Math.Sign(cross.z) * Vector3.Angle(gameObject.transform.forward, rotateDir);
     }
 
     public void ClearAutoMovement()
