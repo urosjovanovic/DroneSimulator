@@ -11,7 +11,6 @@ public sealed class DroneController : MonoBehaviour
     private float verticalSpeed;
     private Vector3 droneCameraViewDirection;
     private float droneModelAngle;
-
     #region Inspector Accessible Params
 
     //Looking from the top of the drone
@@ -60,6 +59,11 @@ public sealed class DroneController : MonoBehaviour
         get { return this.CameraPitchSystem != null; }
     }
 
+    private Queue<GameObject> RoutingPoints
+    {
+        get { return this.GetComponent<RoutingController>().RoutingPoints; }
+    }
+
     #endregion
 
     #region RTSParams
@@ -86,7 +90,6 @@ public sealed class DroneController : MonoBehaviour
     private float autoElevateSpeed;
     private float autoMoveSpeed;
 
-    public List<Vector3> DestinationPoints { get; set; }
     [Range(0, 1)]
     public float MaxIdleVelocity = 0.02f;
     [Range(0, 1)]
@@ -134,7 +137,6 @@ public sealed class DroneController : MonoBehaviour
             this.autoMoveSpeed = AutoMoveSpeed;
 
             this.RTSCamera = GameObject.Find("RTSCamera");
-            this.DestinationPoints = new List<Vector3>();
         }
         catch (Exception ex)
         {
@@ -163,7 +165,7 @@ public sealed class DroneController : MonoBehaviour
             }
 
 
-            if (DestinationPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1 && !frozen)
+            if (this.RoutingPoints.Count > 0 && !inCoroutine && droneRigidbody.velocity.magnitude < maxIdleVelocity && droneRigidbody.angularVelocity.magnitude < 0.1 && !frozen)
             {
                 StartCoroutine("MoveTo", 0);
             }
@@ -287,22 +289,24 @@ public sealed class DroneController : MonoBehaviour
                 sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                 sphere.transform.position = point;
                 sphere.AddComponent<TriggerDestroy>();
-                DestinationPoints.Add(point);
+                //DestinationPoints.Add(point);
             }
         }
     }
 
     private IEnumerator MoveTo(int destinationPointIndex)
     {
+        var destination = this.RoutingPoints.Peek();
         inCoroutine = true;
-        yield return StartCoroutine("RotateToPoint", DestinationPoints[destinationPointIndex]);
+        yield return StartCoroutine("RotateToPoint", destination.transform.position);
         yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine("ElevateToPoint", DestinationPoints[destinationPointIndex]);
+        yield return StartCoroutine("ElevateToPoint", destination.transform.position);
         yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine("MoveForward", DestinationPoints[destinationPointIndex]);
+        yield return StartCoroutine("MoveForward", destination.transform.position);
 
-        if (Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]) <= 0.5)
-            DestinationPoints.RemoveAt(destinationPointIndex);
+        this.RoutingPoints.Dequeue();
+        /*if (Vector3.Distance(gameObject.transform.position, DestinationPoints[destinationPointIndex]) <= 0.5)
+            DestinationPoints.RemoveAt(destinationPointIndex);*/
 
         inCoroutine = false;
         yield return null;
@@ -404,10 +408,12 @@ public sealed class DroneController : MonoBehaviour
 
     public void ClearAutoMovement()
     {
-        this.DestinationPoints.Clear();
         StopCoroutine("MoveForward");
         StopCoroutine("RotateToPoint");
         StopCoroutine("MoveTo");
+        this.inCoroutine = false;
+        this.rotating = false;
+        this.moving = false;
     }
 }
 

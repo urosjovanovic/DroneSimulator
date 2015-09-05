@@ -9,8 +9,7 @@ public sealed class CameraController : MonoBehaviour
 
     // Inspector variables
     [Range(0.1f, 1.0f)]
-    public float
-        PreviewCameraWidth = 0.16f;
+    public float PreviewCameraWidth = 0.16f;
     public Camera ThirdPersonCamera;
     public Camera DroneCamera;
     public Camera FirstPersonCamera;
@@ -52,26 +51,18 @@ public sealed class CameraController : MonoBehaviour
         {
             this.activeCameraIndex = (this.activeCameraIndex + 1) % this.cameras.Length;
             this.ShowActiveCam();
-            if (this.showPreviewCam)
-                this.ShowPreviewCam();
         }
 
         if (Input.GetButtonDown("PreviewCamToggle"))
         {
             this.showPreviewCam = !this.showPreviewCam;
             this.ShowActiveCam();
-            if (this.showPreviewCam)
-                this.ShowPreviewCam();
         }
 
         //if (Input.GetButtonDown("RTSCamToggle"))
         //{
         //    this.SwitchRtsCamera();
         //}
-        if(Input.GetButtonDown("TopDownCamToggle"))
-        {
-            this.SwitchTopDownCamera();
-        }
     }
 
     private void OnGUI()
@@ -96,6 +87,9 @@ public sealed class CameraController : MonoBehaviour
             camera.depth = -1;
         this.ActiveCam.depth = 0;
         this.ActiveCam.rect = new Rect(0, 0, 1, 1);
+
+        if (this.showPreviewCam)
+            this.ShowPreviewCam();
     }
 
     private void ShowPreviewCam()
@@ -117,7 +111,7 @@ public sealed class CameraController : MonoBehaviour
         }
     }
 
-    public void SwitchRtsCamera()
+    private void SwitchRtsCamera()
     {
         var drone = GameObject.Find("DJIPhantom");
         var dc = drone.GetComponent<DroneController>();
@@ -146,39 +140,31 @@ public sealed class CameraController : MonoBehaviour
         }
     }
 
-    public void SwitchTopDownCamera()
+    public void SwitchTopDownCamera(bool enable, Vector3 target)
     {
-        var drone = GameObject.Find("DJIPhantom");
-        var dc = drone.GetComponent<DroneController>();
-
-        if (this.TopDownCamera.enabled == false)
+        if (enable)
         {
-            foreach (var camera in this.cameras)
-                camera.depth = -1;
+            this.SetCamerasDepth(-1);
             this.TopDownCamera.depth = 0;
             this.TopDownCamera.enabled = true;
-            this.TopDownCamera.transform.position = drone.transform.position + new Vector3(0, 100, 0);
-            this.TopDownCamera.transform.LookAt(drone.transform.position);
+            this.TopDownCamera.transform.position = target + new Vector3(0, 100, 0);
+            this.TopDownCamera.transform.LookAt(target);
             this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = true;
-            drone.GetComponent<LineRenderer>().enabled = true;
-            dc.RtsMode = true;
-            dc.TopDownMode = true;
-            dc.planeY = drone.gameObject.transform.position.y;
-            dc.droneMovementPlane = new Plane(Vector3.up, new Vector3(0, dc.planeY, 0));
-            dc.ClearAutoMovement();
         }
         else
         {
-            foreach (var camera in this.cameras)
-                camera.depth = -1;
+            this.SetCamerasDepth(-1);
             this.TopDownCamera.depth = -1;
             this.TopDownCamera.enabled = false;
             this.ShowActiveCam();
             this.TopDownCamera.GetComponent<TopDownCameraController>().enabled = false;
-            drone.GetComponent<LineRenderer>().enabled = false;
-            dc.RtsMode = false;
-            dc.TopDownMode = false;
-            dc.frozen = false;
         }
+    }
+    
+
+    private void SetCamerasDepth(int depth)
+    {
+        foreach (var camera in this.cameras)
+            camera.depth = depth;
     }
 }
