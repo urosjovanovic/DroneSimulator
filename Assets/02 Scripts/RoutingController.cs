@@ -12,7 +12,7 @@ public class RoutingController : MonoBehaviour
     private Transform coordinatePanel;
     private Queue<GameObject> routingPoints;
     private LineRenderer lineRenderer;
-    private GameObject inputField;
+    //private GameObject inputField;
 
     #region Properties
 
@@ -30,7 +30,7 @@ public class RoutingController : MonoBehaviour
         this.cameraController = GameObject.Find("Dummy").GetComponent<CameraController>();
         this.inGameUI = GameObject.Find("IngameUI").GetComponent<Canvas>();
         this.routeUI = GameObject.Find("RouteUI").GetComponent<Canvas>();
-        this.inputField = GameObject.Find("InputField");
+        //this.inputField = GameObject.Find("InputField");
 
         this.coordinatePanel = this.routeUI.transform.FindChild("CoordinateInputPanel");
 
