@@ -96,7 +96,7 @@ public sealed class CameraController : MonoBehaviour
     {
         float paddingRight = this.previewCamPadding * 100.0f / this.ActiveCam.pixelWidth / 100;
         float paddingBottom = this.previewCamPadding * 100.0f / this.ActiveCam.pixelHeight / 100;
-        var previewCamRect = new Rect(1 - this.PreviewCameraWidth - paddingRight, paddingBottom, this.PreviewCameraWidth, this.PreviewCameraWidth * this.ActiveCam.aspect * 3 / 4);
+        var previewCamRect = new Rect(1 - this.PreviewCameraWidth - paddingRight, 1 - (this.PreviewCameraWidth * this.ActiveCam.aspect * 3 / 4) - paddingBottom, this.PreviewCameraWidth, this.PreviewCameraWidth * this.ActiveCam.aspect * 3 / 4);
         if (this.ActiveCam == this.DroneCamera)
         {
             this.ThirdPersonCamera.depth = 1;
@@ -144,6 +144,7 @@ public sealed class CameraController : MonoBehaviour
     {
         if (enable)
         {
+            this.showPreviewCam = false;
             this.SetCamerasDepth(-1);
             this.TopDownCamera.depth = 0;
             this.TopDownCamera.enabled = true;
