@@ -11,7 +11,6 @@ public class RoutingController : MonoBehaviour
     private Canvas routeUI;
     private Transform coordinatePanel;
     private Queue<GameObject> routingPoints;
-    private List<Vector3> routingLinePositions;
     private LineRenderer lineRenderer;
     private GameObject inputField;
 
@@ -41,18 +40,22 @@ public class RoutingController : MonoBehaviour
         this.lineRenderer.SetWidth(0.05f, 0.05f);
 
         this.routingPoints = new Queue<GameObject>();
-        this.routingLinePositions = new List<Vector3>();
     }
 
     // Update is called once per frame
     private void Update()
     {
-        if(this.droneController.TopDownMode && !this.droneController.RtsMode)
+        if(this.droneController.TopDownMode || this.droneController.RtsMode)
         {
-            this.lineRenderer.SetVertexCount(this.routingLinePositions.Count);
-            for (int i = 0; i < this.routingLinePositions.Count; i++)
-                this.lineRenderer.SetPosition(i, this.routingLinePositions[i]);
+            this.lineRenderer.enabled = true;
+            this.lineRenderer.SetVertexCount(this.routingPoints.Count + 1);
+            this.lineRenderer.SetPosition(0, this.transform.position);
+            int i = 1;
+            foreach (var point in this.routingPoints)
+                this.lineRenderer.SetPosition(i++, point.transform.position);
         }
+        else
+            this.lineRenderer.enabled = false;
 
         if (this.droneController.RtsMode && this.droneController.TopDownMode && this.routingPoints.Count == 0)
             this.OnAutoModeButtonClick();
@@ -92,9 +95,6 @@ public class RoutingController : MonoBehaviour
     {
         if (this.routingPoints.Count > 0)
         {
-            this.routingLinePositions.Clear();
-            this.lineRenderer.enabled = false;
-
             this.autoMode = true;
             this.inGameUI.enabled = true;
             this.routeUI.transform.Find("StartButton").gameObject.SetActive(false);
@@ -151,7 +151,6 @@ public class RoutingController : MonoBehaviour
         sphere.transform.position = position;
         sphere.AddComponent<TriggerDestroy>();
         this.routingPoints.Enqueue(sphere);
-        this.routingLinePositions.Add(sphere.transform.position);
 
         /*var newInputField = Instantiate(Resources.Load<GameObject>("RouteLabel"));
         newInputField.transform.position = this.cameraController.TopDownCamera.WorldToScreenPoint(position) + new Vector3(50, 15, 0);
