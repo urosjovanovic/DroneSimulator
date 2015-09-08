@@ -52,7 +52,8 @@ public class RoutingController : MonoBehaviour
             this.lineRenderer.SetPosition(0, this.transform.position);
             int i = 1;
             foreach (var point in this.routingPoints)
-                this.lineRenderer.SetPosition(i++, point.transform.position);
+                if(point != null)
+                    this.lineRenderer.SetPosition(i++, point.transform.position);
         }
         else
             this.lineRenderer.enabled = false;
