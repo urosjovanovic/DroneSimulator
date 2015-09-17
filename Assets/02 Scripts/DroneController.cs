@@ -21,7 +21,6 @@ public sealed class DroneController : MonoBehaviour
 
     //Optional params
     public Camera DroneCamera;
-	public Camera TopDownCamera;
     public Transform CameraRollSystem;
     public Transform CameraPitchSystem;
 
@@ -148,7 +147,7 @@ public sealed class DroneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.LogFormat("In Coroutine: {0}, Moving: {1}, Rotating: {2}", inCoroutine, moving, rotating);
+        //Debug.LogFormat("In Coroutine: {0}, Moving: {1}, Rotating: {2}", inCoroutine, moving, rotating);
 
         if(RtsMode)
         {
