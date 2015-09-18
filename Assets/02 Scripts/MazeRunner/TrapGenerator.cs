@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -491,14 +492,16 @@ public class TrapGenerator : MonoBehaviour
                 if (this.formationType == FormationType.DeathJaws)
                 {
                     var sin = (float)Math.Sin(Time.frameCount * Time.deltaTime);
-                    this.drones[0].position = new Vector3(this.drones[0].position.x, TerrainGenerator.minWallHeight / 2 + 1 + sin, sin - 1.25f);
-                    this.drones[1].position = new Vector3(this.drones[1].position.x, TerrainGenerator.minWallHeight / 2 + 1 + sin, -sin + 1.25f);
-
-                    this.drones[2].position = new Vector3(this.drones[2].position.x, TerrainGenerator.minWallHeight / 2 + 1 - sin, 0);
-                    this.drones[3].position = new Vector3(this.drones[3].position.x, 2 - sin, 0);
-
-                    this.drones[4].position = new Vector3(this.drones[4].position.x, TerrainGenerator.minWallHeight / 2 - 1 - sin, -sin - 1.25f);
-                    this.drones[5].position = new Vector3(this.drones[5].position.x, TerrainGenerator.minWallHeight / 2 - 1 - sin, sin + 1.25f);
+                    var sin2 = (float)Math.Sin(Time.frameCount * Time.deltaTime * 2.5);
+                    this.drones[0].position = new Vector3(this.drones[0].position.x, TerrainGenerator.minWallHeight, sin - 1.25f);
+                    this.drones[1].position = new Vector3(this.drones[1].position.x, TerrainGenerator.minWallHeight, -sin + 1.25f);
+                    this.drones[2].position = new Vector3(this.drones[2].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, -1.25f - sin);
+                    this.drones[3].position = new Vector3(this.drones[3].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, 1.25f + sin);
+                    this.drones[4].position = new Vector3(this.drones[4].position.x, TerrainGenerator.minWallHeight / 2 + 0.75f + sin2, 0);
+                    this.drones[5].position = new Vector3(this.drones[5].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, -1.25f - sin);
+                    this.drones[6].position = new Vector3(this.drones[6].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, 1.25f + sin);
+                    this.drones[7].position = new Vector3(this.drones[7].position.x, 1, sin - 1.25f);
+                    this.drones[8].position = new Vector3(this.drones[8].position.x, 1, -sin + 1.25f);
                 }
             }
         }
@@ -508,20 +511,9 @@ public class TrapGenerator : MonoBehaviour
             switch (formationType)
             {
                 case FormationType.DeathJaws:
-                    {
-                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 + 1, -1);
-                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 + 1, 1);
-
-                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2, 0);
-                        yield return new Vector3(offset, 1, 0);
-
-                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 - 1, -1);
-                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 - 1, 1);
-
-                        break;
-                    }
+                    return Enumerable.Repeat(new Vector3(offset, 0, 0), 9);
                 default:
-                    break;
+                    return Enumerable.Empty<Vector3>();
             }
         }
     }
