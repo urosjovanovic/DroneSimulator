@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
+    public const float terrainMovementSpeed = 0.2f;
     public const float roadwayLength = 200;
     public const float roadwayWidth = 5;
     public const float minWallHeight = 5;
@@ -47,7 +48,7 @@ public class TerrainGenerator : MonoBehaviour
             }
 
             foreach (var segment in this.terrainSegments)
-                segment.Translate(-Vector3.right * 0.1f);
+                segment.Translate(-Vector3.right * terrainMovementSpeed);
         }
     }
 

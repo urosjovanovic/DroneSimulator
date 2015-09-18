@@ -35,7 +35,7 @@ public class TrapGenerator : MonoBehaviour
 
             foreach (var trap in this.traps)
             {
-                trap.Translate(-Vector3.right * 0.1f);
+                trap.Translate(-Vector3.right * TerrainGenerator.terrainMovementSpeed);
                 if (trap.Position.x > maxOffset)
                     maxOffset = trap.Position.x;
             }
@@ -65,6 +65,10 @@ public class TrapGenerator : MonoBehaviour
                 return new DiamondLaserTrap(offset, this.LaserPrefab, 0.5f);
             case TrapType.HorizontalMovingLaserTrap:
                 return new HorizontalMovingLaserTrap(offset, this.LaserPrefab, 0.25f, Random.Range(0.02f, 0.05f), Random.Range(0, 2) == 1); //TODO: da bude brze sa vremenom
+            case TrapType.VerticalColumnTrap:
+                return new VerticalColumnTrap(offset, Random.Range((-TerrainGenerator.roadwayWidth / 2) * 0.5f, TerrainGenerator.roadwayWidth / 2) * 0.5f);
+            case TrapType.MovingWallTrap:
+                return new MovingWallTrap(offset, Random.Range(0, 2) == 1);
             default:
                 return null;
         }
@@ -76,7 +80,9 @@ public class TrapGenerator : MonoBehaviour
     {
         HorizontalLaserTrap = 0,
         DiamondLaserTrap = 1,
-        HorizontalMovingLaserTrap = 2
+        HorizontalMovingLaserTrap = 2,
+        VerticalColumnTrap = 3,
+        MovingWallTrap = 4
     }
 
     #endregion
@@ -319,6 +325,103 @@ public class TrapGenerator : MonoBehaviour
             }
 
             this.currentMoveOffset += this.moveDirection.z * this.speed;
+        }
+    }
+
+    #endregion
+
+    #region Nested type: VerticalColumnTrap
+
+    private sealed class VerticalColumnTrap : TrapBase
+    {
+        private Transform column;
+
+        public VerticalColumnTrap(float offset, float offsetHorizontal)
+        {
+            this.column = GameObject.CreatePrimitive(PrimitiveType.Cylinder).transform;
+            this.column.position = new Vector3(offset, -TerrainGenerator.minWallHeight, offsetHorizontal);
+            this.column.localScale = new Vector3(1, TerrainGenerator.minWallHeight / 2, 1);
+        }
+
+        public override void Destroy()
+        {
+            Object.Destroy(this.column.gameObject);
+            this.column = null;
+        }
+
+        #region Properties
+
+        public override Vector3 Position
+        {
+            get { return this.column.position; }
+        }
+
+        public override TrapType Type
+        {
+            get { return TrapType.VerticalColumnTrap; }
+        }
+
+        #endregion
+
+        public override void Translate(Vector3 amount)
+        {
+            this.column.Translate(amount);
+            if (this.column.position.y < TerrainGenerator.minWallHeight / 2)
+                this.column.Translate(new Vector3(0, 0.1f, 0));
+        }
+    }
+
+    #endregion
+
+    #region Nested type: MovingWallTrap
+
+    private sealed class MovingWallTrap : TrapBase
+    {
+        private bool leftSide;
+        private Transform wall;
+
+        public MovingWallTrap(float offset, bool leftSide)
+        {
+            this.leftSide = leftSide;
+            this.wall = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+            this.wall.position = new Vector3(offset, TerrainGenerator.minWallHeight / 2, (this.leftSide ? 1 : -1) * TerrainGenerator.roadwayWidth);
+            this.wall.localScale = new Vector3(2, TerrainGenerator.minWallHeight, TerrainGenerator.roadwayWidth);
+        }
+
+        public override void Destroy()
+        {
+            Object.Destroy(this.wall.gameObject);
+            this.wall = null;
+        }
+
+        #region Properties
+
+        public override Vector3 Position
+        {
+            get { return this.wall.position; }
+        }
+
+        public override TrapType Type
+        {
+            get { return TrapType.MovingWallTrap; }
+        }
+
+        #endregion
+
+        public override void Translate(Vector3 amount)
+        {
+            this.wall.Translate(amount);
+            var movementVec = new Vector3(0, 0, 0.1f);
+            if (this.leftSide)
+            {
+                if (this.wall.position.z > TerrainGenerator.roadwayWidth / 2.3)
+                    this.wall.Translate(-movementVec);
+            }
+            else
+            {
+                if (this.wall.position.z < -TerrainGenerator.roadwayWidth / 2.3)
+                    this.wall.Translate(movementVec);
+            }
         }
     }
 
