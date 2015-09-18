@@ -7,6 +7,7 @@ using Random = UnityEngine.Random;
 public class TrapGenerator : MonoBehaviour
 {
     public Transform LaserPrefab;
+    public Transform DroneSoldierPrefab;
 
     private uint GenerateAheadLimit = 5;
     private Transform drone;
@@ -69,6 +70,8 @@ public class TrapGenerator : MonoBehaviour
                 return new VerticalColumnTrap(offset, Random.Range((-TerrainGenerator.roadwayWidth / 2) * 0.5f, TerrainGenerator.roadwayWidth / 2) * 0.5f);
             case TrapType.MovingWallTrap:
                 return new MovingWallTrap(offset, Random.Range(0, 2) == 1);
+            case TrapType.DroneArmyTrap:
+                return new DroneArmyTrap(offset, this.DroneSoldierPrefab, DroneArmyTrap.FormationType.DeathJaws);
             default:
                 return null;
         }
@@ -82,7 +85,8 @@ public class TrapGenerator : MonoBehaviour
         DiamondLaserTrap = 1,
         HorizontalMovingLaserTrap = 2,
         VerticalColumnTrap = 3,
-        MovingWallTrap = 4
+        MovingWallTrap = 4,
+        DroneArmyTrap = 5
     }
 
     #endregion
@@ -421,6 +425,103 @@ public class TrapGenerator : MonoBehaviour
             {
                 if (this.wall.position.z < -TerrainGenerator.roadwayWidth / 2.3)
                     this.wall.Translate(movementVec);
+            }
+        }
+    }
+
+    #endregion
+
+    #region Nested type: DroneArmyTrap
+
+    private sealed class DroneArmyTrap : TrapBase
+    {
+        #region Enums
+
+        public enum FormationType
+        {
+            DeathJaws = 0
+        }
+
+        #endregion
+
+        private List<Transform> drones;
+        private FormationType formationType;
+
+        public DroneArmyTrap(float offset, Transform droneSoldierPrefab, FormationType formationType)
+        {
+            this.drones = new List<Transform>();
+            this.formationType = formationType;
+            foreach (var position in this.GetPositions(offset, formationType))
+            {
+                var drone = Instantiate(droneSoldierPrefab).transform;
+                drone.position = position;
+                drone.forward = new Vector3(-1, 0, 0);
+                drone.Rotate(new Vector3(20, 0, 0), Space.Self);
+                this.drones.Add(drone);
+            }
+        }
+
+        public override void Destroy()
+        {
+            foreach (var drone in this.drones)
+                Object.Destroy(drone.gameObject);
+            this.drones.Clear();
+            this.drones = null;
+        }
+
+        #region Properties
+
+        public override Vector3 Position
+        {
+            get { return this.drones[0].position; }
+        }
+
+        public override TrapType Type
+        {
+            get { return TrapType.DroneArmyTrap; }
+        }
+
+        #endregion
+
+        public override void Translate(Vector3 amount)
+        {
+            foreach (var drone in this.drones)
+            {
+                drone.Translate(amount, Space.World);
+                if (this.formationType == FormationType.DeathJaws)
+                {
+                    var sin = (float)Math.Sin(Time.frameCount * Time.deltaTime);
+                    this.drones[0].position = new Vector3(this.drones[0].position.x, TerrainGenerator.minWallHeight / 2 + 1 + sin, sin - 1.25f);
+                    this.drones[1].position = new Vector3(this.drones[1].position.x, TerrainGenerator.minWallHeight / 2 + 1 + sin, -sin + 1.25f);
+
+                    this.drones[2].position = new Vector3(this.drones[2].position.x, TerrainGenerator.minWallHeight / 2 + 1 - sin, 0);
+                    this.drones[3].position = new Vector3(this.drones[3].position.x, 2 - sin, 0);
+
+                    this.drones[4].position = new Vector3(this.drones[4].position.x, TerrainGenerator.minWallHeight / 2 - 1 - sin, -sin - 1.25f);
+                    this.drones[5].position = new Vector3(this.drones[5].position.x, TerrainGenerator.minWallHeight / 2 - 1 - sin, sin + 1.25f);
+                }
+            }
+        }
+
+        private IEnumerable<Vector3> GetPositions(float offset, FormationType formationType)
+        {
+            switch (formationType)
+            {
+                case FormationType.DeathJaws:
+                    {
+                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 + 1, -1);
+                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 + 1, 1);
+
+                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2, 0);
+                        yield return new Vector3(offset, 1, 0);
+
+                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 - 1, -1);
+                        yield return new Vector3(offset, TerrainGenerator.minWallHeight / 2 - 1, 1);
+
+                        break;
+                    }
+                default:
+                    break;
             }
         }
     }
