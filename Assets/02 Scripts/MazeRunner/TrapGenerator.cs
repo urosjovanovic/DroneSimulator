@@ -58,7 +58,6 @@ public class TrapGenerator : MonoBehaviour
     private TrapBase GenerateNextTrap(float offset)
     {
         var randomType = (TrapType)Random.Range(0, Enum.GetValues(typeof(TrapType)).Length);
-
         switch (randomType)
         {
             case TrapType.HorizontalLaserTrap:
@@ -73,6 +72,8 @@ public class TrapGenerator : MonoBehaviour
                 return new MovingWallTrap(offset, Random.Range(0, 2) == 1);
             case TrapType.DroneArmyTrap:
                 return new DroneArmyTrap(offset, this.DroneSoldierPrefab, DroneArmyTrap.FormationType.DeathJaws);
+            case TrapType.PingPongTrap:
+                return new PingPongTrap(offset, Random.Range(0, 4));
             default:
                 return null;
         }
@@ -87,7 +88,8 @@ public class TrapGenerator : MonoBehaviour
         HorizontalMovingLaserTrap = 2,
         VerticalColumnTrap = 3,
         MovingWallTrap = 4,
-        DroneArmyTrap = 5
+        DroneArmyTrap = 5,
+        PingPongTrap = 6
     }
 
     #endregion
@@ -514,6 +516,94 @@ public class TrapGenerator : MonoBehaviour
                     return Enumerable.Repeat(new Vector3(offset, 0, 0), 9);
                 default:
                     return Enumerable.Empty<Vector3>();
+            }
+        }
+    }
+
+    #endregion
+
+    #region Nested type: PingPongTrap
+
+    private sealed class PingPongTrap : TrapBase
+    {
+        private static List<Vector3> ballPossitions;
+        private const float ballSize = 1;
+        private Transform leftPlane;
+        private Transform rightPlane;
+        private Transform ball;
+        private int ballPossition;
+        private Vector3 currentBallDirection;
+
+        public PingPongTrap(float offset, int ballPossiion)
+        {
+            if (ballPossitions == null)
+            {
+                float y = TerrainGenerator.minWallHeight - ballSize / 2;
+                float z = (TerrainGenerator.roadwayWidth - (ballSize + 0.05f)) / 2;
+                ballPossitions = new List<Vector3> { new Vector3(0, ballSize / 2 + 0.5f, -z), new Vector3(0, y, z), new Vector3(0, y, -z), new Vector3(0, ballSize / 2 + 0.5f, z) };
+            }
+
+            this.ballPossition = ballPossiion;
+
+            this.ball = GameObject.CreatePrimitive(PrimitiveType.Sphere).transform;
+            this.ball.localScale = new Vector3(ballSize, ballSize, ballSize);
+            this.ball.position = new Vector3(offset, ballPossitions[this.ballPossition].y, ballPossitions[this.ballPossition].z);
+            this.currentBallDirection = new Vector3(0, 0, -this.ball.position.z).normalized;
+
+            bool leftSide = this.currentBallDirection.z < 0;
+            this.leftPlane = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+            this.leftPlane.GetComponent<Renderer>().material.color = Color.red;
+            this.leftPlane.position = new Vector3(offset, leftSide ? this.ball.position.y : TerrainGenerator.minWallHeight / 2, -TerrainGenerator.roadwayWidth / 2);
+            this.leftPlane.localScale = new Vector3(1, 2, 0.05f);
+
+            this.rightPlane = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+            this.rightPlane.GetComponent<Renderer>().material.color = Color.blue;
+            this.rightPlane.position = new Vector3(offset, !leftSide ? this.ball.position.y : TerrainGenerator.minWallHeight / 2, TerrainGenerator.roadwayWidth / 2);
+            this.rightPlane.localScale = new Vector3(1, 2, 0.05f);
+        }
+
+        public override void Destroy()
+        {
+            Object.Destroy(this.leftPlane.gameObject);
+            this.leftPlane = null;
+            Object.Destroy(this.rightPlane.gameObject);
+            this.rightPlane = null;
+            Object.Destroy(this.ball.gameObject);
+            this.ball = null;
+        }
+
+        #region Properties
+
+        public override Vector3 Position
+        {
+            get { return this.leftPlane.position; }
+        }
+
+        public override TrapType Type
+        {
+            get { return TrapType.PingPongTrap; }
+        }
+
+        #endregion
+
+        public override void Translate(Vector3 amount)
+        {
+            this.ball.Translate(this.currentBallDirection * 0.1f, Space.World);
+            if (this.currentBallDirection.z < 0)
+                this.leftPlane.position = Vector3.Lerp(this.leftPlane.position, new Vector3(this.leftPlane.position.x, this.ball.position.y, this.leftPlane.position.z), Time.deltaTime * 2);
+            else
+                this.rightPlane.position = Vector3.Lerp(this.rightPlane.position, new Vector3(this.rightPlane.position.x, this.ball.position.y, this.rightPlane.position.z), Time.deltaTime * 2);
+            this.ball.Translate(amount);
+            this.leftPlane.Translate(amount);
+            this.rightPlane.Translate(amount);
+
+            if (Math.Abs(this.ball.position.z) + ballSize / 2 >= TerrainGenerator.roadwayWidth / 2)
+            {
+                this.currentBallDirection = new Vector3(0, 0, -this.currentBallDirection.z).normalized;
+                if (this.ball.position.y >= TerrainGenerator.minWallHeight * 0.75f)
+                    this.currentBallDirection = this.currentBallDirection + new Vector3(0, -Random.Range(0, 0.5f), 0);
+                else
+                    this.currentBallDirection = this.currentBallDirection + new Vector3(0, Random.Range(0, 0.5f), 0);
             }
         }
     }
