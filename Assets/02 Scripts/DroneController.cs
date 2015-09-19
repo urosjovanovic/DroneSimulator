@@ -11,7 +11,10 @@ public sealed class DroneController : MonoBehaviour
     private float verticalSpeed;
     private Vector3 droneCameraViewDirection;
     private float droneModelAngle;
+
     #region Inspector Accessible Params
+
+    public bool ArcadeMode;
 
     //Looking from the top of the drone
     public Transform FrontLeftRotor;
@@ -199,9 +202,27 @@ public sealed class DroneController : MonoBehaviour
             sidewayTiltAxis = Input.GetAxis("Horizontal2");
         }
 
+        if(this.ArcadeMode)
+        {
+            sidewayTiltAxis = horizontalAxis;
+            horizontalAxis = 0;
+            tiltAxis = 0;
+
+            if (this.transform.position.y >= TerrainGenerator.minWallHeight - 0.25f && verticalAxis > 0 || this.transform.position.y <= 1f && verticalAxis < 0)
+            {
+                verticalAxis = 0;
+                this.droneRigidbody.velocity = Vector3.zero;
+            }
+
+            if (this.transform.position.z >= TerrainGenerator.roadwayWidth / 2 - 0.5f && sidewayTiltAxis < 0 || this.transform.position.z <= -TerrainGenerator.roadwayWidth / 2 + 0.5f && sidewayTiltAxis > 0)
+            {
+                sidewayTiltAxis = 0;
+                this.droneRigidbody.velocity = Vector3.zero;
+            }
+        }
 
         this.Elevate(verticalAxis * this.VerticalAccelerationFactor);
-        this.Tilt(tiltAxis);
+        this.Tilt(this.ArcadeMode ? 1 : tiltAxis);
         this.SidewayTilt(sidewayTiltAxis);
 
         foreach (var rotor in this.rotors)
@@ -212,6 +233,9 @@ public sealed class DroneController : MonoBehaviour
         if (tiltAxis >= 0 && relativeVelocity.z < 0 || tiltAxis <= 0 && relativeVelocity.z > 0)
             tiltAxis -= relativeVelocity.z * this.HorizontalXStabilizationFactor;
         this.droneRigidbody.AddForce(Vector3.Cross(this.droneModel.right, Vector3.up).normalized * tiltAxis * this.MaxSpeed * this.HorizontalXAccFactor);
+
+        if (this.ArcadeMode)
+            sidewayTiltAxis *= 2;
 
         if (sidewayTiltAxis >= 0 && relativeVelocity.x < 0 || sidewayTiltAxis <= 0 && relativeVelocity.x > 0)
             sidewayTiltAxis -= relativeVelocity.x * this.HorizontalYStabilizationFactor;
@@ -224,8 +248,6 @@ public sealed class DroneController : MonoBehaviour
 
         if (this.droneRigidbody.velocity.magnitude > this.MaxSpeed)
             this.droneRigidbody.velocity = this.droneRigidbody.velocity.normalized * this.MaxSpeed;
-
-        // Debug.Log(string.Format("X: {1:0.0} Y: {0:0.0} Z: {2:0.0}", this.droneRigidbody.velocity.y, relativeVelocity.x, relativeVelocity.z));
     }
 
     private void Elevate(float amount)

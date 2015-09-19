@@ -1,0 +1,147 @@
+fileFormatVersion: 2
+guid: 78d2a3ffd057d044bace002766ea6677
+timeCreated: 1442687378
+licenseType: Free
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: ArrowAlarm
+    100002: ArrowHour
+    100004: ArrowMinute
+    100006: ArrowSecond
+    100008: BellCaps
+    100010: Bells
+    100012: BellScrews
+    100014: Cap_1
+    100016: Cap_11
+    100018: Cap_12
+    100020: Cap_14
+    100022: Capsule
+    100024: //RootNode
+    100026: ClockBody
+    100028: ClockLegs
+    100030: ClockPanel
+    400000: ArrowAlarm
+    400002: ArrowHour
+    400004: ArrowMinute
+    400006: ArrowSecond
+    400008: BellCaps
+    400010: Bells
+    400012: BellScrews
+    400014: Cap_1
+    400016: Cap_11
+    400018: Cap_12
+    400020: Cap_14
+    400022: Capsule
+    400024: //RootNode
+    400026: ClockBody
+    400028: ClockLegs
+    400030: ClockPanel
+    2300000: ArrowAlarm
+    2300002: ArrowHour
+    2300004: ArrowMinute
+    2300006: ArrowSecond
+    2300008: BellCaps
+    2300010: Bells
+    2300012: BellScrews
+    2300014: Cap_1
+    2300016: Cap_11
+    2300018: Cap_12
+    2300020: Cap_14
+    2300022: Capsule
+    2300024: ClockBody
+    2300026: ClockLegs
+    2300028: ClockPanel
+    3300000: ArrowAlarm
+    3300002: ArrowHour
+    3300004: ArrowMinute
+    3300006: ArrowSecond
+    3300008: BellCaps
+    3300010: Bells
+    3300012: BellScrews
+    3300014: Cap_1
+    3300016: Cap_11
+    3300018: Cap_12
+    3300020: Cap_14
+    3300022: Capsule
+    3300024: ClockBody
+    3300026: ClockLegs
+    3300028: ClockPanel
+    4300000: ClockLegs
+    4300002: ClockPanel
+    4300004: ClockBody
+    4300006: Capsule
+    4300008: ArrowHour
+    4300010: Cap_1
+    4300012: ArrowAlarm
+    4300014: Cap_12
+    4300016: ArrowSecond
+    4300018: Cap_11
+    4300020: ArrowMinute
+    4300022: Cap_14
+    4300024: Bells
+    4300026: BellScrews
+    4300028: BellCaps
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

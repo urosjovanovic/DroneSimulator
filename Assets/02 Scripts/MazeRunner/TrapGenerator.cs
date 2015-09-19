@@ -9,19 +9,36 @@ public class TrapGenerator : MonoBehaviour
 {
     public Transform LaserPrefab;
     public Transform DroneSoldierPrefab;
+    public Transform TimeCollectiblePrefab;
 
     private uint GenerateAheadLimit = 5;
     private Transform drone;
     private Queue<TrapBase> traps;
+    private Queue<Transform> collectibles;
+    private int collectibleCountdown;
+    private TrapType lastGeneratedTrap;
 
     // Use this for initialization
     private void Start()
     {
         this.drone = GameObject.Find("DJIPhantom").transform;
         this.traps = new Queue<TrapBase>();
+        this.collectibles = new Queue<Transform>();
+        this.RecalculateCollectibleCountdown();
         float offset = this.drone.position.x;
         for (int i = 0; i <= this.GenerateAheadLimit; i++)
+        {
+            if (this.traps.Count > 0)
+            {
+                if (--collectibleCountdown == 0)
+                {
+                    this.GenerateCollectible(offset, offset + 30);
+                    this.RecalculateCollectibleCountdown();
+                }
+            }
             this.traps.Enqueue(this.GenerateNextTrap(offset += 30));
+        }
+        this.lastGeneratedTrap = TrapType.PingPongTrap;
     }
 
     // Update is called once per frame
@@ -37,17 +54,40 @@ public class TrapGenerator : MonoBehaviour
 
             foreach (var trap in this.traps)
             {
-                trap.Translate(-Vector3.right * TerrainGenerator.terrainMovementSpeed);
-                if (trap.Position.x > maxOffset)
-                    maxOffset = trap.Position.x;
+                trap.Update();
+                if (trap.Offset > maxOffset)
+                    maxOffset = trap.Offset;
+            }
+
+            foreach (var collectible in this.collectibles)
+            {
+                collectible.Rotate(Vector3.up, 2, Space.World);
+                collectible.Translate(-Vector3.right * TerrainGenerator.terrainMovementSpeed, Space.World);
             }
 
             var nextTrap = this.traps.Peek();
-            if (nextTrap.Position.x < this.drone.position.x)
+            if (nextTrap.Offset < this.drone.position.x)
                 if (this.traps.Count <= this.GenerateAheadLimit)
+                {
+                    if (--collectibleCountdown == 0)
+                    {
+                        this.GenerateCollectible(maxOffset, maxOffset + 30);
+                        this.RecalculateCollectibleCountdown();
+                    }
                     this.traps.Enqueue(this.GenerateNextTrap(maxOffset + 30)); //TODO: Staviti random pomeraj
+                }
 
-            if (nextTrap.Position.x < this.drone.position.x - 10)
+            if (this.collectibles.Count > 0)
+            {
+                var nextCollectible = this.collectibles.Peek();
+                if (nextCollectible.position.x < this.drone.position.x - 10)
+                {
+                    this.collectibles.Dequeue();
+                    GameObject.Destroy(nextCollectible.gameObject);
+                }
+            }
+
+            if (nextTrap.Offset < this.drone.position.x - 10)
             {
                 this.traps.Dequeue();
                 nextTrap.Destroy();
@@ -57,7 +97,16 @@ public class TrapGenerator : MonoBehaviour
 
     private TrapBase GenerateNextTrap(float offset)
     {
-        var randomType = (TrapType)Random.Range(0, Enum.GetValues(typeof(TrapType)).Length);
+        int length = Enum.GetValues(typeof(TrapType)).Length;
+        var randomType = (TrapType)Random.Range(0, length);
+        if (randomType == this.lastGeneratedTrap)
+        {
+            if ((int)randomType <= 3)
+                randomType = (TrapType)(((int)randomType + 4) % length);
+            else
+                randomType = (TrapType)(((int)randomType + 1) % length);
+        }
+        this.lastGeneratedTrap = randomType;
         switch (randomType)
         {
             case TrapType.HorizontalLaserTrap:
@@ -79,36 +128,52 @@ public class TrapGenerator : MonoBehaviour
         }
     }
 
-    #region Nested type: TrapType
-
-    private enum TrapType
+    private void GenerateCollectible(float previousTrapOffset, float nextTrapOffset)
     {
-        HorizontalLaserTrap = 0,
-        DiamondLaserTrap = 1,
-        HorizontalMovingLaserTrap = 2,
-        VerticalColumnTrap = 3,
-        MovingWallTrap = 4,
-        DroneArmyTrap = 5,
-        PingPongTrap = 6
+        const float minWallHalfHeight = TerrainGenerator.minWallHeight / 2;
+        const float roadwayHalfWidth = TerrainGenerator.roadwayWidth / 2;
+        var collectible = Instantiate(this.TimeCollectiblePrefab);
+        collectible.localScale = new Vector3(0.05f, 0.05f, 0.05f);
+        collectible.position = new Vector3((previousTrapOffset + nextTrapOffset) / 2 + Random.Range(-5, 10), minWallHalfHeight + Random.Range(-minWallHalfHeight * 0.5f, minWallHalfHeight * 0.5f), Random.Range(-roadwayHalfWidth * 0.5f, roadwayHalfWidth * 0.5f));
+        collectible.name = "Collectible";
+        this.collectibles.Enqueue(collectible);
     }
 
-    #endregion
+    private void RecalculateCollectibleCountdown()
+    {
+        this.collectibleCountdown = Random.Range(3, 7);
+    }
 
     #region Nested type: TrapBase
 
     private abstract class TrapBase
     {
-        public abstract void Destroy();
+        protected GameObject gameObject;
+
+        protected TrapBase(float offset)
+        {
+            this.gameObject = new GameObject(this.Type.ToString());
+            this.gameObject.transform.position = new Vector3(offset, 0, 0);
+        }
+
+        public virtual void Destroy()
+        {
+            GameObject.Destroy(this.gameObject);
+            this.gameObject = null;
+        }
 
         #region Properties
 
-        public abstract Vector3 Position { get; }
-
         public abstract TrapType Type { get; }
+
+        public float Offset { get { return this.gameObject.transform.position.x; } }
 
         #endregion
 
-        public abstract void Translate(Vector3 amount);
+        public virtual void Update()
+        {
+            this.gameObject.transform.Translate(-Vector3.right * TerrainGenerator.terrainMovementSpeed, Space.World);
+        }
     }
 
     #endregion
@@ -120,6 +185,7 @@ public class TrapGenerator : MonoBehaviour
         private List<Transform> lasers;
 
         public HorizontalLaserTrap(float offset, Transform laserPrefab, float step)
+            : base(offset)
         {
             this.lasers = new List<Transform>();
 
@@ -131,6 +197,7 @@ public class TrapGenerator : MonoBehaviour
                 laser.transform.position = position;
                 laser.localScale = new Vector3(0.01f, TerrainGenerator.roadwayWidth / 2, 0.01f);
                 laser.Rotate(new Vector3(90, 0, 0), Space.Self);
+                laser.parent = this.gameObject.transform;
                 this.lasers.Add(laser);
                 position += new Vector3(0, -step, 0);
             }
@@ -138,18 +205,12 @@ public class TrapGenerator : MonoBehaviour
 
         public override void Destroy()
         {
-            foreach (var laser in this.lasers)
-                Object.Destroy(laser.gameObject);
+            base.Destroy();
             this.lasers.Clear();
             this.lasers = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.lasers[0].position; }
-        }
 
         public override TrapType Type
         {
@@ -157,12 +218,6 @@ public class TrapGenerator : MonoBehaviour
         }
 
         #endregion
-
-        public override void Translate(Vector3 amount)
-        {
-            foreach (var laser in this.lasers)
-                laser.Translate(amount);
-        }
     }
 
     #endregion
@@ -174,6 +229,7 @@ public class TrapGenerator : MonoBehaviour
         private List<Transform> lasers;
 
         public DiamondLaserTrap(float offset, Transform laserPrefab, float step)
+            : base(offset)
         {
             this.lasers = new List<Transform>();
 
@@ -185,14 +241,14 @@ public class TrapGenerator : MonoBehaviour
                 leftLaser.transform.position = position;
                 leftLaser.Rotate(new Vector3(75, 0, 0), Space.Self);
                 leftLaser.localScale = new Vector3(0.01f, (float)Math.Sqrt(2 * TerrainGenerator.roadwayWidth * TerrainGenerator.roadwayWidth) / 2, 0.01f);
-
+                leftLaser.parent = this.gameObject.transform;
                 this.lasers.Add(leftLaser);
 
                 var rightLaser = Instantiate(laserPrefab);
                 rightLaser.transform.position = position;
                 rightLaser.Rotate(new Vector3(-75, 0, 0), Space.Self);
                 rightLaser.localScale = new Vector3(0.01f, (float)Math.Sqrt(2 * TerrainGenerator.roadwayWidth * TerrainGenerator.roadwayWidth) / 2, 0.01f);
-
+                rightLaser.parent = this.gameObject.transform;
                 this.lasers.Add(rightLaser);
 
                 if (i < laserCount / 6)
@@ -201,6 +257,7 @@ public class TrapGenerator : MonoBehaviour
                     laser.transform.position = position + new Vector3(0, 0.7f, 0);
                     laser.localScale = new Vector3(0.01f, TerrainGenerator.roadwayWidth / 2, 0.01f);
                     laser.Rotate(new Vector3(90, 0, 0), Space.Self);
+                    laser.parent = this.gameObject.transform;
                     this.lasers.Add(laser);
                 }
 
@@ -210,18 +267,12 @@ public class TrapGenerator : MonoBehaviour
 
         public override void Destroy()
         {
-            foreach (var laser in this.lasers)
-                Object.Destroy(laser.gameObject);
+            base.Destroy();
             this.lasers.Clear();
             this.lasers = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.lasers[0].position; }
-        }
 
         public override TrapType Type
         {
@@ -229,12 +280,6 @@ public class TrapGenerator : MonoBehaviour
         }
 
         #endregion
-
-        public override void Translate(Vector3 amount)
-        {
-            foreach (var laser in this.lasers)
-                laser.Translate(amount);
-        }
     }
 
     #endregion
@@ -254,6 +299,7 @@ public class TrapGenerator : MonoBehaviour
         private float moveOffset;
 
         public HorizontalMovingLaserTrap(float offset, Transform laserPrefab, float step, float speed, bool sameDirection)
+            : base(offset)
         {
             this.topLasers = new List<Transform>();
             this.bottomLasers = new List<Transform>();
@@ -265,12 +311,14 @@ public class TrapGenerator : MonoBehaviour
                 topLaser.transform.position = position;
                 topLaser.localScale = new Vector3(0.01f, TerrainGenerator.roadwayWidth / 2, 0.01f);
                 topLaser.Rotate(new Vector3(90, 0, 0), Space.Self);
+                topLaser.parent = this.gameObject.transform;
                 this.topLasers.Add(topLaser);
 
                 var bottomLaser = Instantiate(laserPrefab);
                 bottomLaser.transform.position = new Vector3(position.x, (sameDirection ? 1.0f : 0.5f) + step * i, position.z);
                 bottomLaser.localScale = new Vector3(0.01f, TerrainGenerator.roadwayWidth / 2, 0.01f);
                 bottomLaser.Rotate(new Vector3(90, 0, 0), Space.Self);
+                bottomLaser.parent = this.gameObject.transform;
                 this.bottomLasers.Add(bottomLaser);
 
                 position += new Vector3(0, -step, 0);
@@ -285,22 +333,14 @@ public class TrapGenerator : MonoBehaviour
 
         public override void Destroy()
         {
-            foreach (var laser in this.topLasers)
-                Object.Destroy(laser.gameObject);
+            base.Destroy();
             this.topLasers.Clear();
             this.topLasers = null;
-            foreach (var laser in this.bottomLasers)
-                Object.Destroy(laser.gameObject);
             this.bottomLasers.Clear();
             this.bottomLasers = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.topLasers[0].position; }
-        }
 
         public override TrapType Type
         {
@@ -309,27 +349,23 @@ public class TrapGenerator : MonoBehaviour
 
         #endregion
 
-        public override void Translate(Vector3 amount)
+        public override void Update()
         {
+            base.Update();
+
             if (this.currentMoveOffset > this.moveOffset || this.currentMoveOffset < 0)
                 this.moveDirection = new Vector3(this.moveDirection.x, this.moveDirection.y, -1 * this.moveDirection.z);
 
             float localSpeed = this.speed;
 
             foreach (var laser in this.topLasers)
-            {
-                laser.Translate(amount);
                 laser.Translate(this.moveDirection * localSpeed);
-            }
 
             if (!this.sameDirection)
                 localSpeed *= -1;
 
             foreach (var laser in this.bottomLasers)
-            {
-                laser.Translate(amount);
                 laser.Translate(this.moveDirection * localSpeed);
-            }
 
             this.currentMoveOffset += this.moveDirection.z * this.speed;
         }
@@ -344,24 +380,22 @@ public class TrapGenerator : MonoBehaviour
         private Transform column;
 
         public VerticalColumnTrap(float offset, float offsetHorizontal)
+            : base(offset)
         {
             this.column = GameObject.CreatePrimitive(PrimitiveType.Cylinder).transform;
             this.column.position = new Vector3(offset, -TerrainGenerator.minWallHeight, offsetHorizontal);
             this.column.localScale = new Vector3(1, TerrainGenerator.minWallHeight / 2, 1);
+            this.column.GetComponent<Collider>().isTrigger = true;
+            this.column.parent = this.gameObject.transform;
         }
 
         public override void Destroy()
         {
-            Object.Destroy(this.column.gameObject);
+            base.Destroy();
             this.column = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.column.position; }
-        }
 
         public override TrapType Type
         {
@@ -370,9 +404,9 @@ public class TrapGenerator : MonoBehaviour
 
         #endregion
 
-        public override void Translate(Vector3 amount)
+        public override void Update()
         {
-            this.column.Translate(amount);
+            base.Update();
             if (this.column.position.y < TerrainGenerator.minWallHeight / 2)
                 this.column.Translate(new Vector3(0, 0.1f, 0));
         }
@@ -388,25 +422,23 @@ public class TrapGenerator : MonoBehaviour
         private Transform wall;
 
         public MovingWallTrap(float offset, bool leftSide)
+            : base(offset)
         {
             this.leftSide = leftSide;
             this.wall = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
             this.wall.position = new Vector3(offset, TerrainGenerator.minWallHeight / 2, (this.leftSide ? 1 : -1) * TerrainGenerator.roadwayWidth);
             this.wall.localScale = new Vector3(2, TerrainGenerator.minWallHeight, TerrainGenerator.roadwayWidth);
+            this.wall.GetComponent<Collider>().isTrigger = true;
+            this.wall.parent = this.gameObject.transform;
         }
 
         public override void Destroy()
         {
-            Object.Destroy(this.wall.gameObject);
+            base.Destroy();
             this.wall = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.wall.position; }
-        }
 
         public override TrapType Type
         {
@@ -415,9 +447,9 @@ public class TrapGenerator : MonoBehaviour
 
         #endregion
 
-        public override void Translate(Vector3 amount)
+        public override void Update()
         {
-            this.wall.Translate(amount);
+            base.Update();
             var movementVec = new Vector3(0, 0, 0.1f);
             if (this.leftSide)
             {
@@ -451,6 +483,7 @@ public class TrapGenerator : MonoBehaviour
         private FormationType formationType;
 
         public DroneArmyTrap(float offset, Transform droneSoldierPrefab, FormationType formationType)
+            : base(offset)
         {
             this.drones = new List<Transform>();
             this.formationType = formationType;
@@ -460,24 +493,20 @@ public class TrapGenerator : MonoBehaviour
                 drone.position = position;
                 drone.forward = new Vector3(-1, 0, 0);
                 drone.Rotate(new Vector3(20, 0, 0), Space.Self);
+                drone.GetComponent<Collider>().isTrigger = true;
+                drone.parent = this.gameObject.transform;
                 this.drones.Add(drone);
             }
         }
 
         public override void Destroy()
         {
-            foreach (var drone in this.drones)
-                Object.Destroy(drone.gameObject);
+            base.Destroy();
             this.drones.Clear();
             this.drones = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.drones[0].position; }
-        }
 
         public override TrapType Type
         {
@@ -486,25 +515,22 @@ public class TrapGenerator : MonoBehaviour
 
         #endregion
 
-        public override void Translate(Vector3 amount)
+        public override void Update()
         {
-            foreach (var drone in this.drones)
+            base.Update();
+            if (this.formationType == FormationType.DeathJaws)
             {
-                drone.Translate(amount, Space.World);
-                if (this.formationType == FormationType.DeathJaws)
-                {
-                    var sin = (float)Math.Sin(Time.frameCount * Time.deltaTime);
-                    var sin2 = (float)Math.Sin(Time.frameCount * Time.deltaTime * 2.5);
-                    this.drones[0].position = new Vector3(this.drones[0].position.x, TerrainGenerator.minWallHeight, sin - 1.25f);
-                    this.drones[1].position = new Vector3(this.drones[1].position.x, TerrainGenerator.minWallHeight, -sin + 1.25f);
-                    this.drones[2].position = new Vector3(this.drones[2].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, -1.25f - sin);
-                    this.drones[3].position = new Vector3(this.drones[3].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, 1.25f + sin);
-                    this.drones[4].position = new Vector3(this.drones[4].position.x, TerrainGenerator.minWallHeight / 2 + 0.75f + sin2, 0);
-                    this.drones[5].position = new Vector3(this.drones[5].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, -1.25f - sin);
-                    this.drones[6].position = new Vector3(this.drones[6].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, 1.25f + sin);
-                    this.drones[7].position = new Vector3(this.drones[7].position.x, 1, sin - 1.25f);
-                    this.drones[8].position = new Vector3(this.drones[8].position.x, 1, -sin + 1.25f);
-                }
+                var sin = (float)Math.Sin(Time.frameCount * Time.deltaTime);
+                var sin2 = (float)Math.Sin(Time.frameCount * Time.deltaTime * 2.5);
+                this.drones[0].position = new Vector3(this.drones[0].position.x, TerrainGenerator.minWallHeight, sin - 1.25f);
+                this.drones[1].position = new Vector3(this.drones[1].position.x, TerrainGenerator.minWallHeight, -sin + 1.25f);
+                this.drones[2].position = new Vector3(this.drones[2].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, -1.25f - sin);
+                this.drones[3].position = new Vector3(this.drones[3].position.x, TerrainGenerator.minWallHeight / 2 + 1.65f - sin, 1.25f + sin);
+                this.drones[4].position = new Vector3(this.drones[4].position.x, TerrainGenerator.minWallHeight / 2 + 0.75f + sin2, 0);
+                this.drones[5].position = new Vector3(this.drones[5].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, -1.25f - sin);
+                this.drones[6].position = new Vector3(this.drones[6].position.x, TerrainGenerator.minWallHeight / 2 - 0.45f + sin, 1.25f + sin);
+                this.drones[7].position = new Vector3(this.drones[7].position.x, 1, sin - 1.25f);
+                this.drones[8].position = new Vector3(this.drones[8].position.x, 1, -sin + 1.25f);
             }
         }
 
@@ -535,6 +561,7 @@ public class TrapGenerator : MonoBehaviour
         private Vector3 currentBallDirection;
 
         public PingPongTrap(float offset, int ballPossiion)
+            : base(offset)
         {
             if (ballPossitions == null)
             {
@@ -548,6 +575,8 @@ public class TrapGenerator : MonoBehaviour
             this.ball = GameObject.CreatePrimitive(PrimitiveType.Sphere).transform;
             this.ball.localScale = new Vector3(ballSize, ballSize, ballSize);
             this.ball.position = new Vector3(offset, ballPossitions[this.ballPossition].y, ballPossitions[this.ballPossition].z);
+            this.ball.GetComponent<Collider>().isTrigger = true;
+            this.ball.parent = this.gameObject.transform;
             this.currentBallDirection = new Vector3(0, 0, -this.ball.position.z).normalized;
 
             bool leftSide = this.currentBallDirection.z < 0;
@@ -555,29 +584,24 @@ public class TrapGenerator : MonoBehaviour
             this.leftPlane.GetComponent<Renderer>().material.color = Color.red;
             this.leftPlane.position = new Vector3(offset, leftSide ? this.ball.position.y : TerrainGenerator.minWallHeight / 2, -TerrainGenerator.roadwayWidth / 2);
             this.leftPlane.localScale = new Vector3(1, 2, 0.05f);
+            this.leftPlane.parent = this.gameObject.transform;
 
             this.rightPlane = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
             this.rightPlane.GetComponent<Renderer>().material.color = Color.blue;
             this.rightPlane.position = new Vector3(offset, !leftSide ? this.ball.position.y : TerrainGenerator.minWallHeight / 2, TerrainGenerator.roadwayWidth / 2);
             this.rightPlane.localScale = new Vector3(1, 2, 0.05f);
+            this.rightPlane.parent = this.gameObject.transform;
         }
 
         public override void Destroy()
         {
-            Object.Destroy(this.leftPlane.gameObject);
+            base.Destroy();
             this.leftPlane = null;
-            Object.Destroy(this.rightPlane.gameObject);
             this.rightPlane = null;
-            Object.Destroy(this.ball.gameObject);
             this.ball = null;
         }
 
         #region Properties
-
-        public override Vector3 Position
-        {
-            get { return this.leftPlane.position; }
-        }
 
         public override TrapType Type
         {
@@ -586,16 +610,15 @@ public class TrapGenerator : MonoBehaviour
 
         #endregion
 
-        public override void Translate(Vector3 amount)
+        public override void Update()
         {
-            this.ball.Translate(this.currentBallDirection * 0.1f, Space.World);
+            base.Update();
+
+            this.ball.Translate(this.currentBallDirection * 0.15f, Space.World);
             if (this.currentBallDirection.z < 0)
                 this.leftPlane.position = Vector3.Lerp(this.leftPlane.position, new Vector3(this.leftPlane.position.x, this.ball.position.y, this.leftPlane.position.z), Time.deltaTime * 2);
             else
                 this.rightPlane.position = Vector3.Lerp(this.rightPlane.position, new Vector3(this.rightPlane.position.x, this.ball.position.y, this.rightPlane.position.z), Time.deltaTime * 2);
-            this.ball.Translate(amount);
-            this.leftPlane.Translate(amount);
-            this.rightPlane.Translate(amount);
 
             if (Math.Abs(this.ball.position.z) + ballSize / 2 >= TerrainGenerator.roadwayWidth / 2)
             {
@@ -609,4 +632,15 @@ public class TrapGenerator : MonoBehaviour
     }
 
     #endregion
+}
+
+public enum TrapType
+{
+    HorizontalLaserTrap = 0,
+    DiamondLaserTrap = 1,
+    HorizontalMovingLaserTrap = 2,
+    VerticalColumnTrap = 3,
+    MovingWallTrap = 4,
+    DroneArmyTrap = 5,
+    PingPongTrap = 6
 }

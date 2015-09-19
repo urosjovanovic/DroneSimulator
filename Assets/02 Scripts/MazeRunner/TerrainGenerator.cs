@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
-    public const float terrainMovementSpeed = 0.2f;
+    public static float terrainMovementSpeed = 0.2f;
     public const float roadwayLength = 200;
     public const float roadwayWidth = 5;
     public const float minWallHeight = 5;
@@ -28,6 +28,7 @@ public class TerrainGenerator : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        terrainMovementSpeed = 0.2f * Mathf.Pow(1.1f, ((int)(Time.timeSinceLevelLoad / 30)));
     }
 
     private void FixedUpdate()
@@ -65,6 +66,7 @@ public class TerrainGenerator : MonoBehaviour
             this.roadway = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
             this.roadway.position = position;
             this.roadway.localScale = new Vector3(roadwayLength, 1, roadwayWidth);
+            this.roadway.GetComponent<Collider>().enabled = false;
 
             this.leftWalls = new List<Transform>();
             float wallWidthSum = 0;
@@ -75,6 +77,7 @@ public class TerrainGenerator : MonoBehaviour
                 float height = Random.Range(minWallHeight, maxWallHeight);
                 wall.position = this.roadway.position - new Vector3(roadwayLength / 2, 0, 0) + new Vector3(wallWidthSum + width / 2, height / 2, -roadwayWidth / 2 - 0.5f);
                 wall.localScale = new Vector3(width, height, 1);
+                wall.GetComponent<Collider>().enabled = false;
                 this.leftWalls.Add(wall);
                 wallWidthSum += width;
             }
@@ -88,6 +91,7 @@ public class TerrainGenerator : MonoBehaviour
                 float height = Random.Range(minWallHeight, maxWallHeight);
                 wall.position = this.roadway.position - new Vector3(roadwayLength / 2, 0, 0) + new Vector3(wallWidthSum + width / 2, height / 2, roadwayWidth / 2 + 0.5f);
                 wall.localScale = new Vector3(width, height, 1);
+                wall.GetComponent<Collider>().enabled = false;
                 this.rightWalls.Add(wall);
                 wallWidthSum += width;
             }
