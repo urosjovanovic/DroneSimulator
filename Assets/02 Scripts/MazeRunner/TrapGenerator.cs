@@ -623,7 +623,7 @@ public class TrapGenerator : MonoBehaviour
             if (Math.Abs(this.ball.position.z) + ballSize / 2 >= TerrainGenerator.roadwayWidth / 2)
             {
                 this.currentBallDirection = new Vector3(0, 0, -this.currentBallDirection.z).normalized;
-                if (this.ball.position.y >= TerrainGenerator.minWallHeight * 0.75f)
+                if (this.ball.position.y >= TerrainGenerator.minWallHeight * 0.5f)
                     this.currentBallDirection = this.currentBallDirection + new Vector3(0, -Random.Range(0, 0.5f), 0);
                 else
                     this.currentBallDirection = this.currentBallDirection + new Vector3(0, Random.Range(0, 0.5f), 0);
