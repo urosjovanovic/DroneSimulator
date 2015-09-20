@@ -9,12 +9,10 @@ public class GameTimeController : MonoBehaviour
     private Transform inGameUI;
     private Text timeText;
     private Text timeUpdateText;
-    private Text gameOverText;
-    private Text elapsedTimeText;
-    private Button reloadButton;
     private Timer timer;
     private Timer timeUpdateTimer;
     private bool gamePaused;
+    private MainMenuArcadeController mainMenuController;
 
     public void UpdateTimeBy(int value)
     {
@@ -35,22 +33,15 @@ public class GameTimeController : MonoBehaviour
 
     }
 
-    public void ReloadLevel()
-    {
-        Application.LoadLevel(Application.loadedLevel);
-    }
-
     // Use this for initialization
     private void Start()
     {
         Time.timeScale = 1;
         this.remainingSeconds = 60;
         this.inGameUI = GameObject.Find("InGameUI").transform;
+        this.mainMenuController = this.inGameUI.GetComponent<MainMenuArcadeController>();
         this.timeText = this.inGameUI.GetChild(0).GetComponent<Text>();
         this.timeUpdateText = this.inGameUI.GetChild(1).GetComponent<Text>();
-        this.gameOverText = this.inGameUI.GetChild(2).GetComponent<Text>();
-        this.reloadButton = this.inGameUI.GetChild(3).GetComponent<Button>();
-        this.elapsedTimeText = this.inGameUI.GetChild(4).GetComponent<Text>();
         this.timer = new Timer(1000);
         this.timer.Elapsed += timer_Elapsed;
         this.timer.Start();
@@ -64,17 +55,10 @@ public class GameTimeController : MonoBehaviour
         if (this.remainingSeconds == 0)
         {
             Time.timeScale = 0;
-            this.gameOverText.gameObject.SetActive(true);
-            this.reloadButton.gameObject.SetActive(true);
-            this.timeText.text = "Time's up!";
-            this.timeText.color = Color.red;
-            this.elapsedTimeText.gameObject.SetActive(true);
-            this.elapsedTimeText.text = string.Format("Elapsed Time {0:00}:{1:00}", (Time.timeSinceLevelLoad / 60) % 60, Time.timeSinceLevelLoad % 60);
+            this.mainMenuController.GameOver();
         }
         else
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
-                Time.timeScale = 1 - Time.timeScale;
             this.timeText.text = string.Format("{0:00}:{1:00}", (this.remainingSeconds / 60) % 60, this.remainingSeconds % 60);
             this.timeUpdateText.gameObject.SetActive(this.timeUpdateTimer.Interval > 100);
         }

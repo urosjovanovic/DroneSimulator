@@ -20,6 +20,7 @@ public class IngameUIController : MonoBehaviour
     public Image PitchBackground;
     public Image Compass;
     public bool UseMetersPerSecond;
+    public MainMenuSimulationController mainMenuController;
 
     #region Properties
 
@@ -43,7 +44,7 @@ public class IngameUIController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        if (Input.GetButtonDown("ShowUIToggle"))
+        if (Input.GetButtonDown("ShowUIToggle") && !this.mainMenuController.GamePaused)
             this.canvas.enabled = !this.canvas.enabled;
 
         if (this.canvas.enabled)

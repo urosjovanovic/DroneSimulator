@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class RoutingController : MonoBehaviour
 {
+    public MainMenuSimulationController mainMenuController;
+
     private bool autoMode;
     private DroneController droneController;
     private CameraController cameraController;
@@ -64,6 +66,9 @@ public class RoutingController : MonoBehaviour
 
     public void OnAutoModeButtonClick()
     {
+        if (this.mainMenuController.GamePaused)
+            return;
+
         this.autoMode = !this.autoMode;
 
         this.inGameUI.enabled = !this.autoMode;
@@ -94,6 +99,9 @@ public class RoutingController : MonoBehaviour
 
     public void OnStartButtonClick()
     {
+        if (this.mainMenuController.GamePaused)
+            return;
+
         if (this.routingPoints.Count > 0)
         {
             this.autoMode = true;
@@ -123,6 +131,9 @@ public class RoutingController : MonoBehaviour
 
     public void ConfirmButtonClick()
     {
+        if (this.mainMenuController.GamePaused)
+            return;
+
         var xCoord = this.coordinatePanel.FindChild("XCoordinate");
         var yCoord = this.coordinatePanel.FindChild("YCoordinate");
         var zCoord = this.coordinatePanel.FindChild("ZCoordinate");
