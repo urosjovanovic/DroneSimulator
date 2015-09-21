@@ -39,7 +39,6 @@ public class MainMenuArcadeController : MonoBehaviour
         this.resumeButton.gameObject.SetActive(false);
         this.elapsedTimeText.gameObject.SetActive(true);
         this.elapsedTimeText.text = string.Format("Elapsed Time {0:00}:{1:00}", (Time.timeSinceLevelLoad / 60) % 60, Time.timeSinceLevelLoad % 60);
-
         this.timeText.text = "Time's up!";
         this.timeText.color = Color.red;
     }
@@ -52,14 +51,14 @@ public class MainMenuArcadeController : MonoBehaviour
 
     public void ResumeArcadeMode()
     {
-        this.mainMenuPanel.SetActive(false);
         Time.timeScale = 1;
+        this.mainMenuPanel.SetActive(false);
     }
 
-    public void StartSimulationMode()
+    public void MainMenu()
     {
         Time.timeScale = 1;
-        Application.LoadLevel("TestArea");
+        Application.LoadLevel("MainMenuScene");
     }
 
     public void Quit()

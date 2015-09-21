@@ -56,6 +56,7 @@ public class GameTimeController : MonoBehaviour
         {
             Time.timeScale = 0;
             this.mainMenuController.GameOver();
+            this.enabled = false;
         }
         else
         {

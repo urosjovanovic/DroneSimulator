@@ -30,10 +30,10 @@ public class MainMenuSimulationController : MonoBehaviour
         Time.timeScale = 1;
     }
 
-    public void StartArcadeMode()
+    public void MainMenu()
     {
         Time.timeScale = 1;
-        Application.LoadLevel("MazeRunnerScene");
+        Application.LoadLevel("MainMenuScene");
     }
 
     public void Quit()
